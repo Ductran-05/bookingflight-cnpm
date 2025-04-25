@@ -7,7 +7,6 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface CityMapper {
-    @Mapping(target = "airports", ignore = true)
     @Mapping(target = "id", ignore = true)
     City toCity(CityRequest cityRequest);
 }

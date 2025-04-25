@@ -4,6 +4,7 @@ public enum ErrorCode {
     UNIDENTIFIED_EXCEPTION(999, "Unidentified Exception"),
     NOT_FOUND(1001, "Not found"),
     EXISTED(1002, "Existed"),
+    INVALID(1003, "Invalid"),
     ;
 
     ErrorCode(int code, String message) {
