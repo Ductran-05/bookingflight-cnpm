@@ -1,0 +1,25 @@
+package com.cnpm.bookingflight.exception;
+
+public enum ErrorCode {
+    UNIDENTIFIED_EXCEPTION(999, "Unidentified Exception"),
+    NOT_FOUND(1001, "Not found"),
+    EXISTED(1002, "Existed"),
+    ;
+
+    ErrorCode(int code, String message) {
+        this.code = code;
+        this.message = message;
+    }
+
+    private int code;
+    private String message;
+
+    public int getCode() {
+        return code;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+}
