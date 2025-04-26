@@ -35,4 +35,5 @@ public class Flight_Airport {
     LocalTime departureTime;
     LocalTime arrivalTime;
     String note;
+
 }

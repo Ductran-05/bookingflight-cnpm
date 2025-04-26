@@ -1,11 +1,15 @@
 package com.cnpm.bookingflight.domain;
 
+import java.util.List;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,4 +33,7 @@ public class Airport {
     @ManyToOne
     @JoinColumn(name = "cityId")
     City city;
+
+    @OneToMany(mappedBy = "airport", cascade = CascadeType.ALL)
+    List<Flight_Airport> interAirports;
 }

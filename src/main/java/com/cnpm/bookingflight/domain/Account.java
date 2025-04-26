@@ -30,4 +30,5 @@ public class Account {
     @ManyToOne
     @JoinColumn(name = "role_id")
     Role role;
+
 }
