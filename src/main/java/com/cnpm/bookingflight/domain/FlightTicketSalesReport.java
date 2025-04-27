@@ -1,35 +1,33 @@
 package com.cnpm.bookingflight.domain;
 
-import com.cnpm.bookingflight.domain.id.Page_RoleId;
+import com.cnpm.bookingflight.domain.id.FlightTicketSalesReportId;
 
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Page_Role {
+public class FlightTicketSalesReport {
+
     @EmbeddedId
-    Page_RoleId id;
+    FlightTicketSalesReportId id;
 
     @ManyToOne
-    @MapsId("pageId")
-    @JoinColumn(name = "page_id")
-    Page page;
+    @MapsId("flightId")
+    @JoinColumn(name = "flight_id")
+    Flight flight;
 
-    @ManyToOne
-    @MapsId("roleId")
-    @JoinColumn(name = "role_id")
-    Role role;
+    double percentage;
+    int ticketCount;
 }

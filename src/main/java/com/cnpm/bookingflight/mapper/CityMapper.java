@@ -2,11 +2,14 @@ package com.cnpm.bookingflight.mapper;
 
 import com.cnpm.bookingflight.domain.City;
 import com.cnpm.bookingflight.dto.request.CityRequest;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+import org.springframework.stereotype.Component;
 
-@Mapper(componentModel = "spring")
-public interface CityMapper {
-    @Mapping(target = "id", ignore = true)
-    City toCity(CityRequest cityRequest);
+@Component
+public class CityMapper {
+    public City toCity(CityRequest request) {
+        return City.builder()
+                .cityCode(request.getCityCode())
+                .cityName(request.getCityName())
+                .build();
+    }
 }

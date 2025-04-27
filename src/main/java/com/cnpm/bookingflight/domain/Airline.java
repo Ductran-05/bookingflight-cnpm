@@ -1,13 +1,9 @@
 package com.cnpm.bookingflight.domain;
 
-import java.util.List;
-
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,6 +22,4 @@ public class Airline {
     String airlineName;
     String logo;
 
-    @OneToMany(mappedBy = "airline", cascade = CascadeType.ALL)
-    List<Plane> planes;
 }

@@ -3,12 +3,16 @@ package com.cnpm.bookingflight.domain;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+import com.cnpm.bookingflight.domain.id.Flight_AirportId;
+
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapsId;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,15 +23,17 @@ import lombok.experimental.FieldDefaults;
 @Entity
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Flight_Airport {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    @EmbeddedId
+    Flight_AirportId id;
 
     @ManyToOne
-    @JoinColumn(name = "flightId")
+    @MapsId("flightId")
+    @JoinColumn(name = "flight_id")
     Flight flight;
+
     @ManyToOne
-    @JoinColumn(name = "airportId")
+    @MapsId("airportId")
+    @JoinColumn(name = "airport_id")
     Airport airport;
 
     LocalDate departureDate;
