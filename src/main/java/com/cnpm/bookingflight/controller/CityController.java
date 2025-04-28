@@ -18,7 +18,6 @@ import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.service.CityService;
 
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
@@ -26,7 +25,6 @@ import lombok.experimental.FieldDefaults;
 @RequestMapping("/cities")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Builder
 public class CityController {
     final CityService cityService;
 
