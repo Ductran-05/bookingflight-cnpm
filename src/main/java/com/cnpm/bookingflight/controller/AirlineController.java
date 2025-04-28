@@ -41,18 +41,18 @@ public class AirlineController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<APIResponse<Airline>> createAirline(@PathVariable("id") long id,
+    public ResponseEntity<APIResponse<Airline>> createAirline(@PathVariable("id") Long id,
             @RequestBody AirlineRequest request) {
         return airlineService.updateAirline(request, id);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<APIResponse<Airline>> getAirlineById(@PathVariable("id") long id) {
+    public ResponseEntity<APIResponse<Airline>> getAirlineById(@PathVariable("id") Long id) {
         return airlineService.getAirlineById(id);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<APIResponse<Void>> deleteAirline(@PathVariable("id") long id) {
+    public ResponseEntity<APIResponse<Void>> deleteAirline(@PathVariable("id") Long id) {
         return airlineService.deleteAirline(id);
     }
 }

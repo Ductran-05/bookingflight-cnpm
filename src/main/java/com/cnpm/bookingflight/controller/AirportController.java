@@ -18,6 +18,7 @@ import com.cnpm.bookingflight.service.AirportService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.web.bind.annotation.PutMapping;
 
 @RestController
 @RequestMapping("/airports")
@@ -27,7 +28,7 @@ public class AirportController {
     final AirportService airportService;
 
     @GetMapping
-    public ResponseEntity<APIResponse<List<Airport>>> getAirports() {
+    public ResponseEntity<APIResponse<List<Airport>>> getAllAirports() {
         return airportService.getAllAirports();
     }
 
@@ -45,5 +46,11 @@ public class AirportController {
     public ResponseEntity<APIResponse<Void>> deleteAirport(@PathVariable("id") Long id) {
         return airportService.deleteAirport(id);
     }
-    
+
+    @PutMapping("/{id}")
+    public ResponseEntity<APIResponse<Airport>> updateAirport(@PathVariable("id") Long id,
+            @RequestBody AirportRequest request) {
+        return airportService.updateAirport(id, request);
+    }
+
 }

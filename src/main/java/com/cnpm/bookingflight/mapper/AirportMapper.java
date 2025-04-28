@@ -26,4 +26,10 @@ public class AirportMapper {
                         .orElseThrow(() -> new AppException(ErrorCode.INVALID)))
                 .build();
     }
+
+    public Airport updateAirport(Airport airport, AirportRequest request) {
+        Airport updatedAirport = this.toAirport(request);
+        updatedAirport.setId(airport.getId());
+        return updatedAirport;
+    }
 }

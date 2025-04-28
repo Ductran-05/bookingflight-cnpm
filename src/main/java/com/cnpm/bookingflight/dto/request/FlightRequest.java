@@ -4,46 +4,28 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Builder
 public class FlightRequest {
     String flightCode;
-    String planeId;
-    String departureAirportId;
-    String arrivalAirportId;
+    Long planeId;
+    Long departureAirportId;
+    Long arrivalAirportId;
     LocalDate departureDate;
     LocalDate arrivalDate;
     LocalTime departureTime;
     LocalTime arrivalTime;
-    Double originPrice;
+    Integer originPrice;
 
     List<Flight_AirportRequest> interAirports;
     List<Flight_SeatRequest> seats;
-}
-
-@Data
-@NoArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
-class Flight_AirportRequest {
-    String airportId;
-    LocalDate departureDate;
-    LocalDate arrivalDate;
-    LocalTime departureTime;
-    LocalTime arrivalTime;
-    String note;
-
-}
-
-@Data
-@NoArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
-class Flight_SeatRequest {
-    String seatId;
-    Integer quantity;
-    Integer remainingTickets;
 }

@@ -9,14 +9,18 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Builder
 public class Flight_Seat {
     @EmbeddedId
     Flight_SeatId id;

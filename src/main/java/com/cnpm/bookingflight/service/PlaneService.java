@@ -33,7 +33,7 @@ public class PlaneService {
         return ResponseEntity.ok(response);
     }
 
-    public ResponseEntity<APIResponse<Plane>> getPlaneById(long id) {
+    public ResponseEntity<APIResponse<Plane>> getPlaneById(Long id) {
         APIResponse<Plane> response = APIResponse.<Plane>builder()
                 .data(planeRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)))
                 .status(200)

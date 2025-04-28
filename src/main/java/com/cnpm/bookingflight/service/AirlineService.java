@@ -21,61 +21,61 @@ import lombok.experimental.FieldDefaults;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AirlineService {
-    final AirlineRepository airlineRepository;
-    final AirlineMapper airlineMapper;
+        final AirlineRepository airlineRepository;
+        final AirlineMapper airlineMapper;
 
-    public ResponseEntity<APIResponse<List<Airline>>> getAllAirlines() {
-        APIResponse<List<Airline>> response = APIResponse.<List<Airline>>builder()
-                .data(airlineRepository.findAll())
-                .status(200)
-                .message("get all airlines successfully")
-                .build();
-        return ResponseEntity.ok(response);
-    }
-
-    public ResponseEntity<APIResponse<Airline>> createAirline(AirlineRequest request) {
-        Airline existingAirline = airlineRepository.findByAirlineCode(request.getAirlineCode());
-        if (existingAirline != null) {
-            throw new AppException(ErrorCode.EXISTED);
+        public ResponseEntity<APIResponse<List<Airline>>> getAllAirlines() {
+                APIResponse<List<Airline>> response = APIResponse.<List<Airline>>builder()
+                                .data(airlineRepository.findAll())
+                                .status(200)
+                                .message("get all airlines successfully")
+                                .build();
+                return ResponseEntity.ok(response);
         }
-        APIResponse<Airline> response = APIResponse.<Airline>builder()
-                .data(airlineRepository.save(airlineMapper.toAirline(request)))
-                .status(201)
-                .message("create airline successfully")
-                .build();
-        return ResponseEntity.ok(response);
-    }
 
-    public ResponseEntity<APIResponse<Airline>> getAirlineById(long id) {
-        APIResponse<Airline> response = APIResponse.<Airline>builder()
-                .data(airlineRepository.findById(id)
-                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)))
-                .status(200)
-                .message("get airline by id successfully")
-                .build();
-        return ResponseEntity.ok(response);
-    }
+        public ResponseEntity<APIResponse<Airline>> createAirline(AirlineRequest request) {
+                Airline existingAirline = airlineRepository.findByAirlineCode(request.getAirlineCode());
+                if (existingAirline != null) {
+                        throw new AppException(ErrorCode.EXISTED);
+                }
+                APIResponse<Airline> response = APIResponse.<Airline>builder()
+                                .data(airlineRepository.save(airlineMapper.toAirline(request)))
+                                .status(201)
+                                .message("create airline successfully")
+                                .build();
+                return ResponseEntity.ok(response);
+        }
 
-    public ResponseEntity<APIResponse<Airline>> updateAirline(AirlineRequest request, long id) {
-        airlineRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        public ResponseEntity<APIResponse<Airline>> getAirlineById(Long id) {
+                APIResponse<Airline> response = APIResponse.<Airline>builder()
+                                .data(airlineRepository.findById(id)
+                                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)))
+                                .status(200)
+                                .message("get airline by id successfully")
+                                .build();
+                return ResponseEntity.ok(response);
+        }
 
-        APIResponse<Airline> response = APIResponse.<Airline>builder()
-                .data(airlineRepository.save(airlineMapper.toAirline(request)))
-                .status(200)
-                .message("update airline successfully")
-                .build();
-        return ResponseEntity.ok(response);
-    }
+        public ResponseEntity<APIResponse<Airline>> updateAirline(AirlineRequest request, Long id) {
+                airlineRepository.findById(id)
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
-    public ResponseEntity<APIResponse<Void>> deleteAirline(long id) {
-        airlineRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        airlineRepository.deleteById(id);
-        APIResponse<Void> response = APIResponse.<Void>builder()
-                .status(204)
-                .message("delete airline successfully")
-                .build();
-        return ResponseEntity.ok(response);
-    }
+                APIResponse<Airline> response = APIResponse.<Airline>builder()
+                                .data(airlineRepository.save(airlineMapper.toAirline(request)))
+                                .status(200)
+                                .message("update airline successfully")
+                                .build();
+                return ResponseEntity.ok(response);
+        }
+
+        public ResponseEntity<APIResponse<Void>> deleteAirline(Long id) {
+                airlineRepository.findById(id)
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                airlineRepository.deleteById(id);
+                APIResponse<Void> response = APIResponse.<Void>builder()
+                                .status(204)
+                                .message("delete airline successfully")
+                                .build();
+                return ResponseEntity.ok(response);
+        }
 }

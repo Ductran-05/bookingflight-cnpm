@@ -35,7 +35,7 @@ public class PlaneController {
     }
 
     @GetMapping("/{id}")
-    ResponseEntity<APIResponse<Plane>> getPlaneById(@PathVariable("id") long id) {
+    ResponseEntity<APIResponse<Plane>> getPlaneById(@PathVariable("id") Long id) {
         return planeService.getPlaneById(id);
     }
 

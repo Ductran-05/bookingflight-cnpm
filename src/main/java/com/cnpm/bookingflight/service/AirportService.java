@@ -58,11 +58,12 @@ public class AirportService {
     public ResponseEntity<APIResponse<Airport>> updateAirport(Long id, AirportRequest request) {
         airportRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-
+        Airport updatedAirport = airportMapper.toAirport(request);
+        updatedAirport.setId(id);
         APIResponse<Airport> response = APIResponse.<Airport>builder()
                 .status(200)
                 .message("Update airport successfully")
-                .data(airportRepository.save(airportMapper.toAirport(request)))
+                .data(airportRepository.save(updatedAirport))
                 .build();
         return ResponseEntity.ok(response);
     }
