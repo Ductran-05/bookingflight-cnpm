@@ -58,8 +58,11 @@ public class PlaneService {
     public ResponseEntity<APIResponse<Plane>> updatePlane(Long id, PlaneRequest request) {
         planeRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        Plane existingPlane = planeMapper.toPlane(request);
+        existingPlane.setId(id);
+        planeRepository.save(existingPlane);
         APIResponse<Plane> response = APIResponse.<Plane>builder()
-                .data(planeRepository.save(planeMapper.toPlane(request)))
+                .data(existingPlane)
                 .status(200)
                 .message("update plane successfully")
                 .build();
