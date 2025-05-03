@@ -59,9 +59,11 @@ public class AirlineService {
         public ResponseEntity<APIResponse<Airline>> updateAirline(AirlineRequest request, Long id) {
                 airlineRepository.findById(id)
                                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-
+                Airline existingAirline = airlineMapper.toAirline(request);
+                existingAirline.setId(id);
+                airlineRepository.save(existingAirline);
                 APIResponse<Airline> response = APIResponse.<Airline>builder()
-                                .data(airlineRepository.save(airlineMapper.toAirline(request)))
+                                .data(existingAirline)
                                 .status(200)
                                 .message("update airline successfully")
                                 .build();
