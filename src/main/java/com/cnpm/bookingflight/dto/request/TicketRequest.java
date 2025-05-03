@@ -9,8 +9,8 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TicketRequest {
-    String flightId;
-    String seatId;
+    Long flightId;
+    Long seatId;
     String passengerName;
     String passengerPhone;
     String passengerIDCard;
