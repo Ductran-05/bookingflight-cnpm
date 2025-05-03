@@ -21,64 +21,68 @@ import lombok.experimental.FieldDefaults;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class SeatService {
-    final SeatRepository seatRepository;
-    final SeatMapper seatMapper;
+        final SeatRepository seatRepository;
+        final SeatMapper seatMapper;
 
-    public ResponseEntity<APIResponse<List<Seat>>> getAllSeats() {
-        APIResponse<List<Seat>> response = APIResponse.<List<Seat>>builder()
-                .status(200)
-                .message("Get all seats successfully")
-                .data(seatRepository.findAll())
-                .build();
-        return ResponseEntity.ok(response);
-    }
-
-    public ResponseEntity<APIResponse<Seat>> getSeatById(Long id) {
-        APIResponse<Seat> response = APIResponse.<Seat>builder()
-                .status(200)
-                .message("Get seat by id successfully")
-                .data(seatRepository.findById(id)
-                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)))
-                .build();
-        return ResponseEntity.ok(response);
-    }
-
-    public ResponseEntity<APIResponse<Seat>> createSeat(SeatRequest request) {
-        Seat existingSeat = seatRepository.findBySeatCode(request.getSeatCode());
-        if (existingSeat != null) {
-            throw new AppException(ErrorCode.EXISTED);
+        public ResponseEntity<APIResponse<List<Seat>>> getAllSeats() {
+                APIResponse<List<Seat>> response = APIResponse.<List<Seat>>builder()
+                                .status(200)
+                                .message("Get all seats successfully")
+                                .data(seatRepository.findAll())
+                                .build();
+                return ResponseEntity.ok(response);
         }
 
-        APIResponse<Seat> response = APIResponse.<Seat>builder()
-                .status(201)
-                .message("Create seat successfully")
-                .data(seatRepository.save(seatMapper.toSeat(request)))
-                .build();
-        return ResponseEntity.ok(response);
-    }
+        public ResponseEntity<APIResponse<Seat>> getSeatById(Long id) {
+                APIResponse<Seat> response = APIResponse.<Seat>builder()
+                                .status(200)
+                                .message("Get seat by id successfully")
+                                .data(seatRepository.findById(id)
+                                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)))
+                                .build();
+                return ResponseEntity.ok(response);
+        }
 
-    public ResponseEntity<APIResponse<Seat>> updateSeat(Long id, SeatRequest request) {
-        seatRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        public ResponseEntity<APIResponse<Seat>> createSeat(SeatRequest request) {
+                Seat existingSeat = seatRepository.findBySeatCode(request.getSeatCode());
+                if (existingSeat != null) {
+                        throw new AppException(ErrorCode.EXISTED);
+                }
 
-        APIResponse<Seat> response = APIResponse.<Seat>builder()
-                .status(200)
-                .message("Update seat successfully")
-                .data(seatRepository.save(seatMapper.toSeat(request)))
-                .build();
-        return ResponseEntity.ok(response);
-    }
+                APIResponse<Seat> response = APIResponse.<Seat>builder()
+                                .status(201)
+                                .message("Create seat successfully")
+                                .data(seatRepository.save(seatMapper.toSeat(request)))
+                                .build();
+                return ResponseEntity.ok(response);
+        }
 
-    public ResponseEntity<APIResponse<Void>> deleteSeat(Long id) {
-        seatRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        public ResponseEntity<APIResponse<Seat>> updateSeat(Long id, SeatRequest request) {
+                seatRepository.findById(id)
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
-        seatRepository.deleteById(id);
+                Seat existingSeat = seatMapper.toSeat(request);
+                existingSeat.setId(id);
+                seatRepository.save(existingSeat);
 
-        APIResponse<Void> response = APIResponse.<Void>builder()
-                .status(204)
-                .message("Delete seat successfully")
-                .build();
-        return ResponseEntity.ok(response);
-    }
+                APIResponse<Seat> response = APIResponse.<Seat>builder()
+                                .status(200)
+                                .message("Update seat successfully")
+                                .data(existingSeat)
+                                .build();
+                return ResponseEntity.ok(response);
+        }
+
+        public ResponseEntity<APIResponse<Void>> deleteSeat(Long id) {
+                seatRepository.findById(id)
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+
+                seatRepository.deleteById(id);
+
+                APIResponse<Void> response = APIResponse.<Void>builder()
+                                .status(204)
+                                .message("Delete seat successfully")
+                                .build();
+                return ResponseEntity.ok(response);
+        }
 }
