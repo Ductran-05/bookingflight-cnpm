@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 import com.cnpm.bookingflight.domain.id.Flight_AirportId;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -24,6 +25,7 @@ import lombok.experimental.FieldDefaults;
 @Entity
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Flight_Airport {
     @EmbeddedId
     Flight_AirportId id;
