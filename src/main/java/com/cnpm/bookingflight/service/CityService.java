@@ -59,10 +59,13 @@ public class CityService {
     public ResponseEntity<APIResponse<City>> updateCity(Long id, CityRequest request) {
         cityRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        City existingCity = cityMapper.toCity(request);
+        existingCity.setId(id);
+        cityRepository.save(existingCity);
         APIResponse<City> response = APIResponse.<City>builder()
                 .status(200)
                 .message("Update city successfully")
-                .data(cityRepository.save(cityMapper.toCity(request)))
+                .data(existingCity)
                 .build();
         return ResponseEntity.ok(response);
     }
