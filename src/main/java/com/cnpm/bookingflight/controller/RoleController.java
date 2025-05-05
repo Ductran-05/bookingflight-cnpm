@@ -3,9 +3,9 @@ package com.cnpm.bookingflight.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.cnpm.bookingflight.domain.Role;
 import com.cnpm.bookingflight.dto.request.RoleRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
+import com.cnpm.bookingflight.dto.response.RoleResponse;
 import com.cnpm.bookingflight.service.RoleService;
 
 import lombok.AccessLevel;
@@ -30,22 +30,23 @@ public class RoleController {
     final RoleService roleService;
 
     @GetMapping()
-    public ResponseEntity<APIResponse<List<Role>>> getAllRoles() {
+    public ResponseEntity<APIResponse<List<RoleResponse>>> getAllRoles() {
         return roleService.getRoles();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<APIResponse<Role>> getRoleById(@PathVariable("id") Long id) {
+    public ResponseEntity<APIResponse<RoleResponse>> getRoleById(@PathVariable("id") Long id) {
         return roleService.getRoleById(id);
     }
 
     @PostMapping()
-    public ResponseEntity<APIResponse<Role>> createRole(@RequestBody RoleRequest request) {
+    public ResponseEntity<APIResponse<RoleResponse>> createRole(@RequestBody RoleRequest request) {
         return roleService.createRole(request);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<APIResponse<Role>> updateRole(@PathVariable("id") Long id, @RequestBody RoleRequest request) {
+    public ResponseEntity<APIResponse<RoleResponse>> updateRole(@PathVariable("id") Long id,
+            @RequestBody RoleRequest request) {
         return roleService.updateRole(id, request);
     }
 
