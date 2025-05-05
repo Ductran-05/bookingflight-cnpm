@@ -19,10 +19,11 @@ public class GlobalException {
     }
 
     @ExceptionHandler(value = Exception.class)
-    ResponseEntity<APIResponse<Void>> handleAppException() {
+    ResponseEntity<APIResponse<Void>> handleAppException(Exception e) {
         APIResponse<Void> response = APIResponse.<Void>builder()
                 .status(ErrorCode.UNIDENTIFIED_EXCEPTION.getCode())
-                .message(ErrorCode.UNIDENTIFIED_EXCEPTION.getMessage())
+                // .message(ErrorCode.UNIDENTIFIED_EXCEPTION.getMessage())
+                .message(e.getMessage())
                 .build();
         return ResponseEntity.badRequest().body(response);
     }

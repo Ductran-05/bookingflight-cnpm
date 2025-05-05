@@ -5,16 +5,20 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.cnpm.bookingflight.domain.Page;
 import com.cnpm.bookingflight.domain.Page_Role;
 import com.cnpm.bookingflight.domain.Role;
+import com.cnpm.bookingflight.dto.request.PageRequest;
 import com.cnpm.bookingflight.dto.request.Page_RoleRequest;
 import com.cnpm.bookingflight.dto.request.RoleRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.RoleResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
+import com.cnpm.bookingflight.mapper.PageMapper;
 import com.cnpm.bookingflight.mapper.Page_RoleMapper;
 import com.cnpm.bookingflight.mapper.RoleMapper;
+import com.cnpm.bookingflight.repository.PageRepository;
 import com.cnpm.bookingflight.repository.Page_RoleRepository;
 import com.cnpm.bookingflight.repository.RoleRepository;
 
@@ -32,6 +36,7 @@ public class RoleService {
         final Page_RoleMapper page_RoleMapper;
         final RoleRepository roleRepository;
         final RoleMapper roleMapper;
+        final PageRepository pageRepository;
 
         public ResponseEntity<APIResponse<List<RoleResponse>>> getRoles() {
                 APIResponse<List<RoleResponse>> response = APIResponse.<List<RoleResponse>>builder()
@@ -61,9 +66,16 @@ public class RoleService {
                 }
                 Role savedRole = roleRepository.save(roleMapper.toRole(request));
 
-                for (Page_RoleRequest pageRoleRequest : request.getPageRoles()) {
-                        Page_Role page_Role = page_RoleMapper.toPage_Role(pageRoleRequest,
-                                        savedRole);
+                // for (PageRequest pageRequest : request.getPages()) {
+                // Page page = pageMapper.toPage(pageRequest);
+                // pageRepository.save(page);
+                // Page_Role page_Role = page_RoleMapper.toPage_Role(page, savedRole);
+                // page_RoleRepository.save(page_Role);
+                // }
+                for (Page page : request.getPages()) {
+                        Page savedPage = pageRepository.findById(page.getId())
+                                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                        Page_Role page_Role = page_RoleMapper.toPage_Role(savedPage, savedRole);
                         page_RoleRepository.save(page_Role);
                 }
 
@@ -78,20 +90,21 @@ public class RoleService {
 
         @Transactional
         public ResponseEntity<APIResponse<RoleResponse>> updateRole(Long id, RoleRequest request) {
-                Role role = roleRepository.findById(id)
+                Role savedRole = roleRepository.findById(id)
                                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
-                page_RoleRepository.deleteAllByRole(role);
-                role.setRoleName(request.getRoleName());
-                roleRepository.save(role);
+                page_RoleRepository.deleteAllByRole(savedRole);
+                savedRole.setRoleName(request.getRoleName());
+                roleRepository.save(savedRole);
 
-                for (Page_RoleRequest pageRoleRequest : request.getPageRoles()) {
-                        Page_Role page_Role = page_RoleMapper.toPage_Role(pageRoleRequest, role);
+                for (Page page : request.getPages()) {
+                        Page savedPage = pageRepository.findById(page.getId())
+                                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                        Page_Role page_Role = page_RoleMapper.toPage_Role(savedPage, savedRole);
                         page_RoleRepository.save(page_Role);
                 }
-
                 APIResponse<RoleResponse> response = APIResponse.<RoleResponse>builder()
-                                .data(roleMapper.toRoleResponse(role))
+                                .data(roleMapper.toRoleResponse(savedRole))
                                 .status(200)
                                 .message("Update role successfully")
                                 .build();

@@ -2,7 +2,7 @@ package com.cnpm.bookingflight.dto.response;
 
 import java.util.List;
 
-import com.cnpm.bookingflight.domain.Page_Role;
+import com.cnpm.bookingflight.domain.Page;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -19,5 +19,5 @@ import lombok.experimental.FieldDefaults;
 public class RoleResponse {
     Long id;
     String roleName;
-    List<Page_Role> pageRoles;
+    List<Page> pages;
 }

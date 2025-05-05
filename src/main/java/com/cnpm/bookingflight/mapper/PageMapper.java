@@ -14,8 +14,8 @@ import lombok.experimental.FieldDefaults;
 public class PageMapper {
 
     public Page toPage(PageRequest pageRequest) {
-        Page page = new Page();
-        page.setPageName(pageRequest.getPageName());
-        return page;
+        return Page.builder()
+                .pageName(pageRequest.getPageName())
+                .build();
     }
 }
