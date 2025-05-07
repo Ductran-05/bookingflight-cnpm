@@ -56,7 +56,7 @@ public class FlightTicketSalesReportService {
                 .toList();
 
         if (flights.isEmpty()) {
-            throw new AppException(ErrorCode.NOT_FOUND);
+            throw new AppException(ErrorCode.NO_FLIGHTS_FOUND);
         }
 
         // Tính tổng doanh thu trong tháng

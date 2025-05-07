@@ -5,7 +5,8 @@ public enum ErrorCode {
     NOT_FOUND(1001, "Not found"),
     EXISTED(1002, "Existed"),
     INVALID(1003, "Invalid"),
-    OUT_OF_TICKETS(1004, "Out of tickets");
+    OUT_OF_TICKETS(1004, "Out of tickets"),
+    NO_FLIGHTS_FOUND(1005, "No flights found in this time");
 
     ErrorCode(int code, String message) {
         this.code = code;
@@ -22,5 +23,4 @@ public enum ErrorCode {
     public String getMessage() {
         return message;
     }
-
 }

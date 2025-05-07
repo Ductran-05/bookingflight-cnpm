@@ -49,7 +49,7 @@ public class AnnualRevenueReportService {
                 .toList();
 
         if (flightsInYear.isEmpty()) {
-            throw new AppException(ErrorCode.NOT_FOUND);
+            throw new AppException(ErrorCode.NO_FLIGHTS_FOUND);
         }
 
         // Tính doanh thu của năm
