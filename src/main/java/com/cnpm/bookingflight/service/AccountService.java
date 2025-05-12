@@ -1,10 +1,5 @@
 package com.cnpm.bookingflight.service;
 
-import java.util.List;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-
 import com.cnpm.bookingflight.domain.Account;
 import com.cnpm.bookingflight.dto.request.AccountRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
@@ -12,10 +7,15 @@ import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.mapper.AccountMapper;
 import com.cnpm.bookingflight.repository.AccountRepository;
-
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +23,7 @@ import lombok.experimental.FieldDefaults;
 public class AccountService {
     final AccountRepository accountRepository;
     final AccountMapper accountMapper;
+    final ImageUploadService imageUploadService;
 
     public ResponseEntity<APIResponse<List<Account>>> getAllAccounts() {
         APIResponse<List<Account>> response = APIResponse.<List<Account>>builder()
@@ -43,30 +44,43 @@ public class AccountService {
         return ResponseEntity.ok(response);
     }
 
-    public ResponseEntity<APIResponse<Account>> createAccount(AccountRequest request) {
+    public ResponseEntity<APIResponse<Account>> createAccount(AccountRequest request, MultipartFile avatar) throws IOException {
         Account account = accountRepository.findByUsername(request.getUsername());
         if (account != null) {
             throw new AppException(ErrorCode.EXISTED);
         }
 
+        Account newAccount = accountMapper.toAccount(request);
+        if (avatar != null && !avatar.isEmpty()) {
+            String avatarUrl = imageUploadService.uploadImage(avatar, "avatars");
+            newAccount.setAvatar(avatarUrl);
+        }
+
         APIResponse<Account> response = APIResponse.<Account>builder()
-                .status(200)
+                .status(201)
                 .message("Create account successfully")
-                .data(accountRepository.save(accountMapper.toAccount(request)))
+                .data(accountRepository.save(newAccount))
                 .build();
         return ResponseEntity.ok(response);
     }
 
-    public ResponseEntity<APIResponse<Account>> updateAccount(Long id, AccountRequest request) {
-        accountRepository.findById(id)
+    public ResponseEntity<APIResponse<Account>> updateAccount(Long id, AccountRequest request, MultipartFile avatar) throws IOException {
+        Account existingAccount = accountRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        Account existingAccount = accountMapper.toAccount(request);
-        existingAccount.setId(id);
-        accountRepository.save(existingAccount);
+
+        Account updatedAccount = accountMapper.toAccount(request);
+        updatedAccount.setId(id);
+        if (avatar != null && !avatar.isEmpty()) {
+            String avatarUrl = imageUploadService.uploadImage(avatar, "avatars");
+            updatedAccount.setAvatar(avatarUrl);
+        } else {
+            updatedAccount.setAvatar(existingAccount.getAvatar());
+        }
+
         APIResponse<Account> response = APIResponse.<Account>builder()
                 .status(200)
                 .message("Update account successfully")
-                .data(existingAccount)
+                .data(accountRepository.save(updatedAccount))
                 .build();
         return ResponseEntity.ok(response);
     }
@@ -81,5 +95,4 @@ public class AccountService {
                 .build();
         return ResponseEntity.ok(response);
     }
-
 }
