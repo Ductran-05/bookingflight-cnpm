@@ -1,17 +1,16 @@
 package com.cnpm.bookingflight.domain.id;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.io.Serializable;
 
-import jakarta.persistence.Embeddable;
-import lombok.AccessLevel;
-import lombok.Data;
-import lombok.experimental.FieldDefaults;
-
-@Embeddable
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class FlightTicketSalesReportId implements Serializable {
-    Long flightId;
-    int month;
-    int year;
+    private Long flightId;
+    private int year;
+    private int month;
 }

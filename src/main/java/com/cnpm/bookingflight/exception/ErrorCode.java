@@ -5,7 +5,10 @@ public enum ErrorCode {
     NOT_FOUND(1001, "Not found"),
     EXISTED(1002, "Existed"),
     INVALID(1003, "Invalid"),
-    OUT_OF_TICKETS(1004, "Out of tickets");
+    OUT_OF_TICKETS(1004, "Out of tickets"),
+    NO_FLIGHTS_FOUND(1005, "No flights found in this time"),
+    INVALID_FILE(1006, "Invalid file" ),
+    UNSUPPORTED_FILE_TYPE(1007,"Unsupported File Type" ),;
 
     ErrorCode(int code, String message) {
         this.code = code;
@@ -22,5 +25,4 @@ public enum ErrorCode {
     public String getMessage() {
         return message;
     }
-
 }

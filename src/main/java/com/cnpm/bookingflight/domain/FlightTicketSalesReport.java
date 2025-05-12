@@ -1,7 +1,6 @@
 package com.cnpm.bookingflight.domain;
 
 import com.cnpm.bookingflight.domain.id.FlightTicketSalesReportId;
-
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
@@ -9,6 +8,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -18,6 +18,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Entity
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Builder
 public class FlightTicketSalesReport {
 
     @EmbeddedId
