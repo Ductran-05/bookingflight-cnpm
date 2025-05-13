@@ -8,14 +8,11 @@ import org.springframework.stereotype.Service;
 import com.cnpm.bookingflight.domain.Page;
 import com.cnpm.bookingflight.domain.Page_Role;
 import com.cnpm.bookingflight.domain.Role;
-import com.cnpm.bookingflight.dto.request.PageRequest;
-import com.cnpm.bookingflight.dto.request.Page_RoleRequest;
 import com.cnpm.bookingflight.dto.request.RoleRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.RoleResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
-import com.cnpm.bookingflight.mapper.PageMapper;
 import com.cnpm.bookingflight.mapper.Page_RoleMapper;
 import com.cnpm.bookingflight.mapper.RoleMapper;
 import com.cnpm.bookingflight.repository.PageRepository;
@@ -66,12 +63,6 @@ public class RoleService {
                 }
                 Role savedRole = roleRepository.save(roleMapper.toRole(request));
 
-                // for (PageRequest pageRequest : request.getPages()) {
-                // Page page = pageMapper.toPage(pageRequest);
-                // pageRepository.save(page);
-                // Page_Role page_Role = page_RoleMapper.toPage_Role(page, savedRole);
-                // page_RoleRepository.save(page_Role);
-                // }
                 for (Page page : request.getPages()) {
                         Page savedPage = pageRepository.findById(page.getId())
                                         .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
@@ -128,4 +119,3 @@ public class RoleService {
                 return ResponseEntity.ok(response);
         }
 }
-/////// cần fix lại trả về
