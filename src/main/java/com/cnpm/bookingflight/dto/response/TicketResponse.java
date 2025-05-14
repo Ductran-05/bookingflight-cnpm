@@ -16,12 +16,10 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TicketResponse {
     Long id;
-    FlightResponse flight;
+    FlightTicketResponse flight; // Sử dụng FlightTicketResponse thay vì FlightResponse
     Seat seat;
-
     String passengerName;
     String passengerEmail;
     String passengerPhone;
     String passengerIDCard;
-    Boolean isPaid;
 }

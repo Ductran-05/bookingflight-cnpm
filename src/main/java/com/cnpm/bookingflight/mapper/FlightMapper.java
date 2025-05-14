@@ -3,6 +3,7 @@ package com.cnpm.bookingflight.mapper;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cnpm.bookingflight.dto.response.*;
 import org.springframework.stereotype.Component;
 
 import com.cnpm.bookingflight.domain.Airport;
@@ -11,10 +12,6 @@ import com.cnpm.bookingflight.domain.Flight_Airport;
 import com.cnpm.bookingflight.domain.Flight_Seat;
 import com.cnpm.bookingflight.domain.Plane;
 import com.cnpm.bookingflight.dto.request.FlightRequest;
-import com.cnpm.bookingflight.dto.response.AirportResponse;
-import com.cnpm.bookingflight.dto.response.FlightResponse;
-import com.cnpm.bookingflight.dto.response.Flight_AirportResponse;
-import com.cnpm.bookingflight.dto.response.PlaneResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.repository.AirportRepository;
@@ -119,5 +116,21 @@ public class FlightMapper {
                                 .build());
                 }
                 return results;
+        }
+        public FlightTicketResponse toFlightTicketResponse(Flight flight) {
+                List<Flight_Airport> interAirports = flight_AirportRepository.findByIdFlightId(flight.getId());
+                return FlightTicketResponse.builder()
+                        .id(flight.getId())
+                        .flightCode(flight.getFlightCode())
+                        .plane(convertPlane(flight.getPlane()))
+                        .departureAirport(convertAirport(flight.getDepartureAirport()))
+                        .arrivalAirport(convertAirport(flight.getArrivalAirport()))
+                        .departureDate(flight.getDepartureDate())
+                        .arrivalDate(flight.getArrivalDate())
+                        .departureTime(flight.getDepartureTime())
+                        .arrivalTime(flight.getArrivalTime())
+                        .originalPrice(flight.getOriginalPrice())
+                        .interAirports(convertFlight_Airport(interAirports))
+                        .build();
         }
 }

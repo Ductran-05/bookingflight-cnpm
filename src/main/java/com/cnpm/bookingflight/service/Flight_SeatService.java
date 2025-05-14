@@ -23,17 +23,32 @@ public class Flight_SeatService {
     final SeatRepository seatRepository;
     final Flight_SeatRepository flight_SeatRepository;
 
-    public void bookingTicket(TicketRequest request) {
-        flightRepository.findById(request.getFlightId()).orElseThrow(() -> new AppException(ErrorCode.INVALID));
-        seatRepository.findById(request.getSeatId()).orElseThrow(() -> new AppException(ErrorCode.INVALID));
-
-        Flight_Seat ticket = flight_SeatRepository
-                .findById(new Flight_SeatId(request.getFlightId(), request.getSeatId()))
+    public void bookingTicket(TicketRequest request, int quantity) {
+        if (request.getFlightId() == null) {
+            throw new AppException(ErrorCode.INVALID);
+        }
+        flightRepository.findById(request.getFlightId())
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID));
-        if (ticket.getRemainingTickets() == 0)
-            throw new AppException(ErrorCode.OUT_OF_TICKETS);
 
-        ticket.setRemainingTickets(ticket.getRemainingTickets() - 1);
+        if (request.getTickets() == null || request.getTickets().isEmpty()) {
+            throw new AppException(ErrorCode.INVALID);
+        }
+        Long seatId = request.getTickets().get(0).getSeatId();
+        if (seatId == null) {
+            throw new AppException(ErrorCode.INVALID);
+        }
+        seatRepository.findById(seatId)
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID));
+
+        // Kiểm tra và cập nhật số lượng vé còn lại
+        Flight_Seat ticket = flight_SeatRepository
+                .findById(new Flight_SeatId(request.getFlightId(), seatId))
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID));
+        if (ticket.getRemainingTickets() < quantity) {
+            throw new AppException(ErrorCode.OUT_OF_TICKETS);
+        }
+
+        ticket.setRemainingTickets(ticket.getRemainingTickets() - quantity);
         flight_SeatRepository.save(ticket);
     }
 }
