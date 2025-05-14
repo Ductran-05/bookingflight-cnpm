@@ -11,7 +11,10 @@ import com.cnpm.bookingflight.domain.Flight_Airport;
 import com.cnpm.bookingflight.domain.Flight_Seat;
 import com.cnpm.bookingflight.domain.Plane;
 import com.cnpm.bookingflight.dto.request.FlightRequest;
+import com.cnpm.bookingflight.dto.response.AirportResponse;
 import com.cnpm.bookingflight.dto.response.FlightResponse;
+import com.cnpm.bookingflight.dto.response.Flight_AirportResponse;
+import com.cnpm.bookingflight.dto.response.PlaneResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.repository.AirportRepository;
@@ -46,8 +49,8 @@ public class FlightMapper {
                         .departureTime(flight.getDepartureTime())
                         .arrivalTime(flight.getArrivalTime())
                         .originalPrice(flight.getOriginalPrice())
-                        .interAirports(covertFlight_Airport(interAirports))
-                        .seats(covertFlight_Seat(seats))
+                        .interAirports(convertFlight_Airport(interAirports))
+                        .seats(convertFlight_Seat(seats))
                         .build();
         }
 
@@ -74,46 +77,46 @@ public class FlightMapper {
                         .build();
         }
 
-        public Plane convertPlane(Plane request) {
-                return Plane.builder()
-                        .id(request.getId())
-                        .planeCode(request.getPlaneCode())
-                        .planeName(request.getPlaneName())
+        public PlaneResponse convertPlane(Plane plane) {
+                return PlaneResponse.builder()
+                        .id(plane.getId())
+                        .planeCode(plane.getPlaneCode())
+                        .planeName(plane.getPlaneName())
+                        .airlineName(plane.getAirline() != null ? plane.getAirline().getAirlineName() : null)
                         .build();
         }
 
-        public Airport convertAirport(Airport request) {
-                return Airport.builder()
-                        .id(request.getId())
-                        .airportCode(request.getAirportCode())
-                        .airportName(request.getAirportName())
+        public AirportResponse convertAirport(Airport airport) {
+                return AirportResponse.builder()
+                        .id(airport.getId())
+                        .airportCode(airport.getAirportCode())
+                        .airportName(airport.getAirportName())
+                        .cityName(airport.getCity() != null ? airport.getCity().getCityName() : null)
                         .build();
         }
 
-        public List<Flight_Airport> covertFlight_Airport(List<Flight_Airport> request) {
-                List<Flight_Airport> results = new ArrayList<>();
+        public List<Flight_AirportResponse> convertFlight_Airport(List<Flight_Airport> request) {
+                List<Flight_AirportResponse> results = new ArrayList<>();
                 for (Flight_Airport item : request) {
-                        item = Flight_Airport.builder()
+                        results.add(Flight_AirportResponse.builder()
                                 .airport(convertAirport(item.getAirport()))
                                 .departureDateTime(item.getDepartureDateTime())
                                 .arrivalDateTime(item.getArrivalDateTime())
                                 .note(item.getNote())
-                                .build();
-                        results.add(item);
+                                .build());
                 }
                 return results;
         }
 
-        public List<Flight_Seat> covertFlight_Seat(List<Flight_Seat> request) {
+        public List<Flight_Seat> convertFlight_Seat(List<Flight_Seat> request) {
                 List<Flight_Seat> results = new ArrayList<>();
                 for (Flight_Seat item : request) {
-                        item = Flight_Seat.builder()
+                        results.add(Flight_Seat.builder()
                                 .seat(item.getSeat())
                                 .quantity(item.getQuantity())
                                 .remainingTickets(item.getRemainingTickets())
                                 .price(item.getPrice())
-                                .build();
-                        results.add(item);
+                                .build());
                 }
                 return results;
         }
