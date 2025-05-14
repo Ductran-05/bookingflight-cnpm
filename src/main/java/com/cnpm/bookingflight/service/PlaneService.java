@@ -2,6 +2,7 @@ package com.cnpm.bookingflight.service;
 
 import java.util.List;
 
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -24,9 +25,10 @@ public class PlaneService {
     final PlaneRepository planeRepository;
     final PlaneMapper planeMapper;
 
-    public ResponseEntity<APIResponse<List<Plane>>> getAllPlanes() {
+    public ResponseEntity<APIResponse<List<Plane>>> getAllPlanes(Specification<Plane> spec) {
+        List<Plane> page = planeRepository.findAll(spec);
         APIResponse<List<Plane>> response = APIResponse.<List<Plane>>builder()
-                .data(planeRepository.findAll())
+                .data(page)
                 .status(200)
                 .message("get all planes successfully")
                 .build();

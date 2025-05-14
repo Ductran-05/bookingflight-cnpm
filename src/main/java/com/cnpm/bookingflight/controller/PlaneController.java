@@ -7,6 +7,7 @@ import com.cnpm.bookingflight.domain.Plane;
 import com.cnpm.bookingflight.dto.request.PlaneRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.service.PlaneService;
+import com.turkraft.springfilter.boot.Filter;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,8 +32,8 @@ public class PlaneController {
     final PlaneService planeService;
 
     @GetMapping()
-    ResponseEntity<APIResponse<List<Plane>>> getAllPlanes() {
-        return planeService.getAllPlanes();
+    ResponseEntity<APIResponse<List<Plane>>> getAllPlanes(@Filter Specification<Plane> spec) {
+        return planeService.getAllPlanes(spec);
     }
 
     @GetMapping("/{id}")

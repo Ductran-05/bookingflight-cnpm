@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.cnpm.bookingflight.domain.Page;
 import com.cnpm.bookingflight.domain.Page_Role;
 import com.cnpm.bookingflight.domain.Role;
+import com.cnpm.bookingflight.dto.request.Page_RoleRequest;
 import com.cnpm.bookingflight.dto.request.RoleRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.RoleResponse;
@@ -63,8 +64,8 @@ public class RoleService {
                 }
                 Role savedRole = roleRepository.save(roleMapper.toRole(request));
 
-                for (Page page : request.getPages()) {
-                        Page savedPage = pageRepository.findById(page.getId())
+                for (Page_RoleRequest page_RoleRequest : request.getPage_RoleRequests()) {
+                        Page savedPage = pageRepository.findById(page_RoleRequest.getPageId())
                                         .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
                         Page_Role page_Role = page_RoleMapper.toPage_Role(savedPage, savedRole);
                         page_RoleRepository.save(page_Role);
@@ -88,8 +89,8 @@ public class RoleService {
                 savedRole.setRoleName(request.getRoleName());
                 roleRepository.save(savedRole);
 
-                for (Page page : request.getPages()) {
-                        Page savedPage = pageRepository.findById(page.getId())
+                for (Page_RoleRequest page_RoleRequest : request.getPage_RoleRequests()) {
+                        Page savedPage = pageRepository.findById(page_RoleRequest.getPageId())
                                         .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
                         Page_Role page_Role = page_RoleMapper.toPage_Role(savedPage, savedRole);
                         page_RoleRepository.save(page_Role);
