@@ -64,8 +64,8 @@ public class RoleService {
                 }
                 Role savedRole = roleRepository.save(roleMapper.toRole(request));
 
-                for (Page_RoleRequest page_RoleRequest : request.getPage_RoleRequests()) {
-                        Page savedPage = pageRepository.findById(page_RoleRequest.getPageId())
+                for (Long pageId : request.getPages()) {
+                        Page savedPage = pageRepository.findById(pageId)
                                         .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
                         Page_Role page_Role = page_RoleMapper.toPage_Role(savedPage, savedRole);
                         page_RoleRepository.save(page_Role);
@@ -89,8 +89,8 @@ public class RoleService {
                 savedRole.setRoleName(request.getRoleName());
                 roleRepository.save(savedRole);
 
-                for (Page_RoleRequest page_RoleRequest : request.getPage_RoleRequests()) {
-                        Page savedPage = pageRepository.findById(page_RoleRequest.getPageId())
+                for (Long pageId : request.getPages()) {
+                        Page savedPage = pageRepository.findById(pageId)
                                         .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
                         Page_Role page_Role = page_RoleMapper.toPage_Role(savedPage, savedRole);
                         page_RoleRepository.save(page_Role);

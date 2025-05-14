@@ -3,6 +3,7 @@ package com.cnpm.bookingflight.service;
 import com.cnpm.bookingflight.domain.Account;
 import com.cnpm.bookingflight.dto.request.AccountRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
+import com.cnpm.bookingflight.dto.response.AccountResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.mapper.AccountMapper;
@@ -25,26 +26,27 @@ public class AccountService {
     final AccountMapper accountMapper;
     final ImageUploadService imageUploadService;
 
-    public ResponseEntity<APIResponse<List<Account>>> getAllAccounts() {
-        APIResponse<List<Account>> response = APIResponse.<List<Account>>builder()
+    public ResponseEntity<APIResponse<List<AccountResponse>>> getAllAccounts() {
+        APIResponse<List<AccountResponse>> response = APIResponse.<List<AccountResponse>>builder()
                 .status(200)
                 .message("Get all accounts successfully")
-                .data(accountRepository.findAll())
+                .data(accountRepository.findAll().stream().map(accountMapper::toAccountResponse).toList())
                 .build();
         return ResponseEntity.ok(response);
     }
 
-    public ResponseEntity<APIResponse<Account>> getAccountById(Long id) {
-        APIResponse<Account> response = APIResponse.<Account>builder()
+    public ResponseEntity<APIResponse<AccountResponse>> getAccountById(Long id) {
+        APIResponse<AccountResponse> response = APIResponse.<AccountResponse>builder()
                 .status(200)
                 .message("Get account by id successfully")
-                .data(accountRepository.findById(id)
-                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)))
+                .data(accountMapper.toAccountResponse(
+                        accountRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND))))
                 .build();
         return ResponseEntity.ok(response);
     }
 
-    public ResponseEntity<APIResponse<Account>> createAccount(AccountRequest request, MultipartFile avatar) throws IOException {
+    public ResponseEntity<APIResponse<AccountResponse>> createAccount(AccountRequest request, MultipartFile avatar)
+            throws IOException {
         Account account = accountRepository.findByUsername(request.getUsername());
         if (account != null) {
             throw new AppException(ErrorCode.EXISTED);
@@ -56,15 +58,17 @@ public class AccountService {
             newAccount.setAvatar(avatarUrl);
         }
 
-        APIResponse<Account> response = APIResponse.<Account>builder()
+        APIResponse<AccountResponse> response = APIResponse.<AccountResponse>builder()
                 .status(201)
                 .message("Create account successfully")
-                .data(accountRepository.save(newAccount))
+                .data(accountMapper.toAccountResponse(accountRepository.save(newAccount)))
                 .build();
         return ResponseEntity.ok(response);
     }
 
-    public ResponseEntity<APIResponse<Account>> updateAccount(Long id, AccountRequest request, MultipartFile avatar) throws IOException {
+    public ResponseEntity<APIResponse<AccountResponse>> updateAccount(Long id, AccountRequest request,
+            MultipartFile avatar)
+            throws IOException {
         Account existingAccount = accountRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
@@ -77,10 +81,10 @@ public class AccountService {
             updatedAccount.setAvatar(existingAccount.getAvatar());
         }
 
-        APIResponse<Account> response = APIResponse.<Account>builder()
+        APIResponse<AccountResponse> response = APIResponse.<AccountResponse>builder()
                 .status(200)
                 .message("Update account successfully")
-                .data(accountRepository.save(updatedAccount))
+                .data(accountMapper.toAccountResponse(accountRepository.save(updatedAccount)))
                 .build();
         return ResponseEntity.ok(response);
     }

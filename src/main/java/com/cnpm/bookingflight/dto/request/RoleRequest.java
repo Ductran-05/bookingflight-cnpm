@@ -14,5 +14,5 @@ public class RoleRequest {
     String roleName;
 
     // List<Page_RoleRequest> pageRoles;
-    List<Page_RoleRequest> page_RoleRequests;
+    List<Long> pages;
 }
