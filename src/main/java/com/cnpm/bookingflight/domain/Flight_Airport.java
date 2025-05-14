@@ -1,7 +1,6 @@
 package com.cnpm.bookingflight.domain;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 import com.cnpm.bookingflight.domain.id.Flight_AirportId;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -40,9 +39,7 @@ public class Flight_Airport {
     @JoinColumn(name = "airport_id")
     Airport airport;
 
-    LocalDate departureDate;
-    LocalDate arrivalDate;
-    LocalTime departureTime;
-    LocalTime arrivalTime;
+    LocalDateTime departureDateTime;
+    LocalDateTime arrivalDateTime;
     String note;
 }

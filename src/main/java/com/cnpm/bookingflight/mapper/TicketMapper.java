@@ -22,7 +22,6 @@ import lombok.experimental.FieldDefaults;
 public class TicketMapper {
         final FlightRepository flightRepository;
         final SeatRepository seatRepository;
-
         final FlightMapper flightMapper;
 
         public Ticket updateTicket(Ticket ticket, TicketRequest request) {
@@ -32,35 +31,45 @@ public class TicketMapper {
         }
 
         public Ticket toTicket(TicketRequest request) {
+                TicketRequest.TicketInfo ticketInfo = null;
+                if (request.getTickets() != null && !request.getTickets().isEmpty()) {
+                        ticketInfo = request.getTickets().get(0);
+                } else {
+                        throw new AppException(ErrorCode.INVALID);
+                }
+
+                Long seatId = ticketInfo.getSeatId();
+                if (seatId == null) {
+                        throw new AppException(ErrorCode.INVALID);
+                }
+
                 return Ticket.builder()
-                                .flight(flightRepository.findById(request.getFlightId())
-                                                .orElseThrow(() -> new AppException(ErrorCode.INVALID)))
-                                .seat(seatRepository.findById(request.getSeatId())
-                                                .orElseThrow(() -> new AppException(ErrorCode.INVALID)))
-                                .passengerEmail(request.getPassengerEmail())
-                                .passengerName(request.getPassengerName())
-                                .passengerPhone(request.getPassengerPhone())
-                                .passengerIDCard(request.getPassengerIDCard())
-                                .isPaid(request.getIsPaid())
-                                .build();
+                        .flight(flightRepository.findById(request.getFlightId())
+                                .orElseThrow(() -> new AppException(ErrorCode.INVALID)))
+                        .seat(seatRepository.findById(seatId)
+                                .orElseThrow(() -> new AppException(ErrorCode.INVALID)))
+                        .passengerEmail(ticketInfo.getPassengerEmail())
+                        .passengerName(ticketInfo.getPassengerName())
+                        .passengerPhone(ticketInfo.getPassengerPhone())
+                        .passengerIDCard(ticketInfo.getPassengerIDCard())
+                        .build();
         }
 
         public TicketResponse toTicketResponse(Ticket ticket) {
                 return TicketResponse.builder()
-                                .id(ticket.getId())
-                                .flight(flightMapper.toFlightResponse(ticket.getFlight()))
-                                .seat(ticket.getSeat())
-                                .passengerEmail(ticket.getPassengerEmail())
-                                .passengerPhone(ticket.getPassengerPhone())
-                                .passengerIDCard(ticket.getPassengerIDCard())
-                                .passengerName(ticket.getPassengerName())
-                                .isPaid(ticket.getIsPaid())
-                                .build();
+                        .id(ticket.getId())
+                        .flight(flightMapper.toFlightTicketResponse(ticket.getFlight()))
+                        .seat(ticket.getSeat())
+                        .passengerEmail(ticket.getPassengerEmail())
+                        .passengerPhone(ticket.getPassengerPhone())
+                        .passengerIDCard(ticket.getPassengerIDCard())
+                        .passengerName(ticket.getPassengerName())
+                        .build();
         }
 
         public List<TicketResponse> toTicketResponseList(List<Ticket> tickets) {
                 return tickets.stream()
-                                .map(this::toTicketResponse)
-                                .toList();
+                        .map(this::toTicketResponse)
+                        .toList();
         }
 }

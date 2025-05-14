@@ -3,6 +3,7 @@ package com.cnpm.bookingflight.mapper;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cnpm.bookingflight.dto.response.*;
 import org.springframework.stereotype.Component;
 
 import com.cnpm.bookingflight.domain.Airport;
@@ -11,7 +12,6 @@ import com.cnpm.bookingflight.domain.Flight_Airport;
 import com.cnpm.bookingflight.domain.Flight_Seat;
 import com.cnpm.bookingflight.domain.Plane;
 import com.cnpm.bookingflight.dto.request.FlightRequest;
-import com.cnpm.bookingflight.dto.response.FlightResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.repository.AirportRepository;
@@ -36,88 +36,101 @@ public class FlightMapper {
                 List<Flight_Airport> interAirports = flight_AirportRepository.findByIdFlightId(flight.getId());
                 List<Flight_Seat> seats = flight_SeatRepository.findByIdFlightId(flight.getId());
                 return FlightResponse.builder()
-                                .id(flight.getId())
-                                .flightCode(flight.getFlightCode())
-                                .plane(convertPlane(flight.getPlane()))
-                                .departureAirport(convertAirport(flight.getDepartureAirport()))
-                                .arrivalAirport(convertAirport(flight.getArrivalAirport()))
-                                .departureDate(flight.getDepartureDate())
-                                .arrivalDate(flight.getArrivalDate())
-                                .departureTime(flight.getDepartureTime())
-                                .arrivalTime(flight.getArrivalTime())
-                                .originalPrice(flight.getOriginalPrice())
-                                .interAirports(covertFlight_Airport(interAirports))
-                                .seats(covertFlight_Seat(seats))
-                                .build();
+                        .id(flight.getId())
+                        .flightCode(flight.getFlightCode())
+                        .plane(convertPlane(flight.getPlane()))
+                        .departureAirport(convertAirport(flight.getDepartureAirport()))
+                        .arrivalAirport(convertAirport(flight.getArrivalAirport()))
+                        .departureDate(flight.getDepartureDate())
+                        .arrivalDate(flight.getArrivalDate())
+                        .departureTime(flight.getDepartureTime())
+                        .arrivalTime(flight.getArrivalTime())
+                        .originalPrice(flight.getOriginalPrice())
+                        .interAirports(convertFlight_Airport(interAirports))
+                        .seats(convertFlight_Seat(seats))
+                        .build();
         }
 
         public List<FlightResponse> toFlightResponseList(List<Flight> flights) {
                 return flights.stream()
-                                .map(this::toFlightResponse)
-                                .toList();
+                        .map(this::toFlightResponse)
+                        .toList();
         }
 
         public Flight toFlight(FlightRequest request) {
                 return Flight.builder()
-                                .flightCode(request.getFlightCode())
-                                .plane(planeRepository.findById(request.getPlaneId())
-                                                .orElseThrow(() -> new AppException(ErrorCode.INVALID)))
-                                .departureAirport(airportRepository.findById(request.getDepartureAirportId())
-                                                .orElseThrow(() -> new AppException(ErrorCode.INVALID)))
-                                .arrivalAirport(airportRepository.findById(request.getArrivalAirportId())
-                                                .orElseThrow(() -> new AppException(ErrorCode.INVALID)))
-                                .departureDate(request.getDepartureDate())
-                                .arrivalDate(request.getArrivalDate())
-                                .departureTime(request.getDepartureTime())
-                                .arrivalTime(request.getArrivalTime())
-                                .originalPrice(request.getOriginPrice())
-                                .build();
+                        .flightCode(request.getFlightCode())
+                        .plane(planeRepository.findById(request.getPlaneId())
+                                .orElseThrow(() -> new AppException(ErrorCode.INVALID)))
+                        .departureAirport(airportRepository.findById(request.getDepartureAirportId())
+                                .orElseThrow(() -> new AppException(ErrorCode.INVALID)))
+                        .arrivalAirport(airportRepository.findById(request.getArrivalAirportId())
+                                .orElseThrow(() -> new AppException(ErrorCode.INVALID)))
+                        .departureDate(request.getDepartureDate())
+                        .arrivalDate(request.getArrivalDate())
+                        .departureTime(request.getDepartureTime())
+                        .arrivalTime(request.getArrivalTime())
+                        .originalPrice(request.getOriginPrice())
+                        .build();
         }
 
-        public Plane convertPlane(Plane request) {
-                return Plane.builder()
-                                .id(request.getId())
-                                .planeCode(request.getPlaneCode())
-                                .planeName(request.getPlaneName())
-                                .build();
+        public PlaneResponse convertPlane(Plane plane) {
+                return PlaneResponse.builder()
+                        .id(plane.getId())
+                        .planeCode(plane.getPlaneCode())
+                        .planeName(plane.getPlaneName())
+                        .airlineName(plane.getAirline() != null ? plane.getAirline().getAirlineName() : null)
+                        .build();
         }
 
-        public Airport convertAirport(Airport request) {
-                return Airport.builder()
-                                .id(request.getId())
-                                .airportCode(request.getAirportCode())
-                                .airportName(request.getAirportName())
-                                .build();
+        public AirportResponse convertAirport(Airport airport) {
+                return AirportResponse.builder()
+                        .id(airport.getId())
+                        .airportCode(airport.getAirportCode())
+                        .airportName(airport.getAirportName())
+                        .cityName(airport.getCity() != null ? airport.getCity().getCityName() : null)
+                        .build();
         }
 
-        public List<Flight_Airport> covertFlight_Airport(List<Flight_Airport> request) {
-                List<Flight_Airport> results = new ArrayList<>();
+        public List<Flight_AirportResponse> convertFlight_Airport(List<Flight_Airport> request) {
+                List<Flight_AirportResponse> results = new ArrayList<>();
                 for (Flight_Airport item : request) {
-                        item = Flight_Airport.builder()
-                                        .airport(convertAirport(item.getAirport()))
-                                        .departureDate(item.getDepartureDate())
-                                        .arrivalDate(item.getArrivalDate())
-                                        .departureDate(item.getDepartureDate())
-                                        .arrivalDate(item.getArrivalDate())
-                                        .note(item.getNote())
-                                        .build();
-                        results.add(item);
+                        results.add(Flight_AirportResponse.builder()
+                                .airport(convertAirport(item.getAirport()))
+                                .departureDateTime(item.getDepartureDateTime())
+                                .arrivalDateTime(item.getArrivalDateTime())
+                                .note(item.getNote())
+                                .build());
                 }
                 return results;
         }
 
-        public List<Flight_Seat> covertFlight_Seat(List<Flight_Seat> request) {
+        public List<Flight_Seat> convertFlight_Seat(List<Flight_Seat> request) {
                 List<Flight_Seat> results = new ArrayList<>();
                 for (Flight_Seat item : request) {
-                        item = Flight_Seat.builder()
-                                        .seat(item.getSeat())
-                                        .quantity(item.getQuantity())
-                                        .remainingTickets(item.getRemainingTickets())
-                                        .price(item.getPrice())
-                                        .build();
-                        results.add(item);
+                        results.add(Flight_Seat.builder()
+                                .seat(item.getSeat())
+                                .quantity(item.getQuantity())
+                                .remainingTickets(item.getRemainingTickets())
+                                .price(item.getPrice())
+                                .build());
                 }
                 return results;
         }
-
+        public FlightTicketResponse toFlightTicketResponse(Flight flight) {
+                List<Flight_Airport> interAirports = flight_AirportRepository.findByIdFlightId(flight.getId());
+                return FlightTicketResponse.builder()
+                        .id(flight.getId())
+                        .flightCode(flight.getFlightCode())
+                        .plane(convertPlane(flight.getPlane()))
+                        .departureAirport(convertAirport(flight.getDepartureAirport()))
+                        .arrivalAirport(convertAirport(flight.getArrivalAirport()))
+                        .departureDate(flight.getDepartureDate())
+                        .arrivalDate(flight.getArrivalDate())
+                        .departureTime(flight.getDepartureTime())
+                        .arrivalTime(flight.getArrivalTime())
+                        .originalPrice(flight.getOriginalPrice())
+                        .interAirports(convertFlight_Airport(interAirports))
+                        .build();
+        }
 }

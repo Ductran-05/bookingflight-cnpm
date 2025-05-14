@@ -1,7 +1,5 @@
 package com.cnpm.bookingflight.dto.response;
 
-import com.cnpm.bookingflight.domain.Seat;
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,12 +12,9 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class TicketResponse {
+public class AirportResponse {
     Long id;
-    FlightTicketResponse flight; // Sử dụng FlightTicketResponse thay vì FlightResponse
-    Seat seat;
-    String passengerName;
-    String passengerEmail;
-    String passengerPhone;
-    String passengerIDCard;
+    String airportCode;
+    String airportName;
+    String cityName;
 }

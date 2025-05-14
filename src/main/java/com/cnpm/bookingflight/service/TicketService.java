@@ -1,6 +1,9 @@
 package com.cnpm.bookingflight.service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -26,11 +29,8 @@ import lombok.experimental.FieldDefaults;
 public class TicketService {
 
     final TicketRepository ticketRepository;
-
     final Flight_SeatService flight_SeatService;
-
     final TicketMapper ticketMapper;
-
     final Flight_SeatRepository flight_SeatRepository;
 
     public ResponseEntity<APIResponse<List<TicketResponse>>> getAllTickets() {
@@ -47,17 +47,65 @@ public class TicketService {
                 .data(ticketMapper.toTicketResponse(ticketRepository.findById(id)
                         .orElseThrow(() -> new AppException(ErrorCode.INVALID))))
                 .status(200)
-                .message("get plane by id successfully")
+                .message("get ticket by id successfully")
                 .build();
         return ResponseEntity.ok(response);
     }
 
-    public ResponseEntity<APIResponse<TicketResponse>> bookingTicket(TicketRequest request) {
-        flight_SeatService.bookingTicket(request);
-        APIResponse<TicketResponse> response = APIResponse.<TicketResponse>builder()
+    public ResponseEntity<APIResponse<List<TicketResponse>>> bookingTicket(TicketRequest request) {
+        // Kiểm tra flightId
+        if (request.getFlightId() == null) {
+            throw new AppException(ErrorCode.INVALID);
+        }
+
+        // Kiểm tra danh sách vé (tickets)
+        if (request.getTickets() == null || request.getTickets().isEmpty()) {
+            throw new AppException(ErrorCode.INVALID);
+        }
+
+        // Đếm số lượng vé cho từng seatId
+        Map<Long, Integer> seatQuantities = new HashMap<>();
+        for (TicketRequest.TicketInfo ticketInfo : request.getTickets()) {
+            if (ticketInfo.getSeatId() == null) {
+                throw new AppException(ErrorCode.INVALID);
+            }
+            seatQuantities.merge(ticketInfo.getSeatId(), 1, Integer::sum);
+        }
+
+        // Kiểm tra và cập nhật số lượng vé còn lại
+        for (Map.Entry<Long, Integer> entry : seatQuantities.entrySet()) {
+            Long seatId = entry.getKey();
+            int quantity = entry.getValue();
+            TicketRequest tempRequest = new TicketRequest();
+            tempRequest.setFlightId(request.getFlightId());
+            List<TicketRequest.TicketInfo> tempTickets = new ArrayList<>();
+            TicketRequest.TicketInfo tempTicketInfo = new TicketRequest.TicketInfo();
+            tempTicketInfo.setSeatId(seatId);
+            tempTickets.add(tempTicketInfo);
+            tempRequest.setTickets(tempTickets);
+            flight_SeatService.bookingTicket(tempRequest, quantity);
+        }
+
+        // Tạo vé cho mỗi thông tin vé (ticketInfo)
+        List<Ticket> tickets = new ArrayList<>();
+        for (TicketRequest.TicketInfo ticketInfo : request.getTickets()) {
+            TicketRequest tempRequest = new TicketRequest();
+            tempRequest.setFlightId(request.getFlightId());
+            List<TicketRequest.TicketInfo> tempTickets = new ArrayList<>();
+            tempTickets.add(ticketInfo);
+            tempRequest.setTickets(tempTickets);
+            Ticket ticket = ticketMapper.toTicket(tempRequest);
+            tickets.add(ticket);
+        }
+
+        // Lưu tất cả vé
+        List<Ticket> savedTickets = ticketRepository.saveAll(tickets);
+
+        // Trả về danh sách vé đã tạo
+        APIResponse<List<TicketResponse>> response = APIResponse.<List<TicketResponse>>builder()
                 .status(201)
-                .message("Booking ticket successfully")
-                .data(ticketMapper.toTicketResponse(ticketRepository.save(ticketMapper.toTicket(request))))
+                .message("Booking tickets successfully")
+                .data(ticketMapper.toTicketResponseList(savedTickets))
                 .build();
         return ResponseEntity.ok(response);
     }
@@ -65,9 +113,7 @@ public class TicketService {
     public ResponseEntity<APIResponse<Void>> deleteTicketById(Long id) {
         Ticket ticket = ticketRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
         flight_SeatRepository.deleteById(new Flight_SeatId(ticket.getFlight().getId(), ticket.getSeat().getId()));
-        // xoa ve trong bang ve trung gian
         ticketRepository.deleteById(id);
-        // xoa ve trong bang ve
         APIResponse<Void> response = APIResponse.<Void>builder()
                 .status(200)
                 .message("delete by id successfully")
@@ -77,15 +123,32 @@ public class TicketService {
 
     public ResponseEntity<APIResponse<TicketResponse>> updateTicket(Long id, TicketRequest request) {
         Ticket ticket = ticketRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        // tim ve cu
-        if (ticket.getSeat().getId() != request.getSeatId()) {
-            flight_SeatRepository.deleteById(new Flight_SeatId(ticket.getFlight().getId(), ticket.getSeat().getId()));
-            flight_SeatService.bookingTicket(request);
+
+        // Kiểm tra danh sách vé và lấy thông tin đầu tiên
+        TicketRequest.TicketInfo ticketInfo = null;
+        if (request.getTickets() != null && !request.getTickets().isEmpty()) {
+            ticketInfo = request.getTickets().get(0);
+        } else {
+            throw new AppException(ErrorCode.INVALID);
         }
+
+        // Kiểm tra nếu seatId thay đổi
+        if (!ticket.getSeat().getId().equals(ticketInfo.getSeatId())) {
+            flight_SeatRepository.deleteById(new Flight_SeatId(ticket.getFlight().getId(), ticket.getSeat().getId()));
+            TicketRequest tempRequest = new TicketRequest();
+            tempRequest.setFlightId(request.getFlightId());
+            List<TicketRequest.TicketInfo> tempTickets = new ArrayList<>();
+            tempTickets.add(ticketInfo);
+            tempRequest.setTickets(tempTickets);
+            flight_SeatService.bookingTicket(tempRequest, 1); // Cập nhật với quantity=1
+        }
+
+        // Cập nhật thông tin vé
+        Ticket updatedTicket = ticketMapper.updateTicket(ticket, request);
         APIResponse<TicketResponse> response = APIResponse.<TicketResponse>builder()
                 .status(200)
                 .message("update ticket successfully")
-                .data(ticketMapper.toTicketResponse(ticketRepository.save(ticketMapper.updateTicket(ticket, request))))
+                .data(ticketMapper.toTicketResponse(ticketRepository.save(updatedTicket)))
                 .build();
         return ResponseEntity.ok(response);
     }

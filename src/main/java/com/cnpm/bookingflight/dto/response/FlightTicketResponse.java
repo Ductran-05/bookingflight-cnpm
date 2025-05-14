@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
-import com.cnpm.bookingflight.domain.Flight_Seat;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,7 +16,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class FlightResponse {
+public class FlightTicketResponse {
     Long id;
     String flightCode;
     PlaneResponse plane;
@@ -29,5 +28,4 @@ public class FlightResponse {
     LocalTime arrivalTime;
     Integer originalPrice;
     List<Flight_AirportResponse> interAirports;
-    List<Flight_Seat> seats;
 }
