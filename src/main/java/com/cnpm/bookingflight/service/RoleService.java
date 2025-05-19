@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import com.cnpm.bookingflight.domain.Page;
 import com.cnpm.bookingflight.domain.Page_Role;
 import com.cnpm.bookingflight.domain.Role;
-import com.cnpm.bookingflight.dto.request.Page_RoleRequest;
 import com.cnpm.bookingflight.dto.request.RoleRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.RoleResponse;
@@ -58,7 +57,7 @@ public class RoleService {
         }
 
         public ResponseEntity<APIResponse<RoleResponse>> createRole(RoleRequest request) {
-                Role existingRole = roleRepository.findByRoleName(request.getRoleName());
+                Role existingRole = roleRepository.findByRoleName(request.getRoleName()).orElse(null);
                 if (existingRole != null) {
                         throw new AppException(ErrorCode.EXISTED);
                 }
