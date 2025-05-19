@@ -10,7 +10,8 @@ public enum ErrorCode {
     INVALID_FILE(1006, "Invalid file"),
     UNSUPPORTED_FILE_TYPE(1007, "Unsupported File Type"),
     INVALID_INPUT(1003, "Username or password is invalid"),
-    ROLE_NOT_FOUND(1008, "Role not found"),;
+    ROLE_NOT_FOUND(1008, "Role not found"),
+    FLIGHT_HAS_TICKETS(1009, "Flight has booked tickets and cannot be updated or deleted" );
 
     ErrorCode(int code, String message) {
         this.code = code;

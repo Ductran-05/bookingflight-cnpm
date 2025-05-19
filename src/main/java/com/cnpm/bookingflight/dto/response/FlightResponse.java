@@ -15,7 +15,7 @@ import lombok.experimental.FieldDefaults;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class FlightResponse {
     Long id;
@@ -30,4 +30,6 @@ public class FlightResponse {
     Integer originalPrice;
     List<Flight_AirportResponse> interAirports;
     List<Flight_Seat> seats;
+    Boolean canUpdate;
+    Boolean canDelete;
 }
