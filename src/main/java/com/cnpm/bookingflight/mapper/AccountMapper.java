@@ -21,33 +21,25 @@ public class AccountMapper {
     final RoleRepository roleRepository;
 
     public Account toAccount(AccountRequest request) {
-        BasicTextEncryptor textEncryptor = new BasicTextEncryptor();
 
-        textEncryptor.setPassword("mySecretKey");
-
-        String encryptedPassword = textEncryptor.encrypt(request.getPassword());
         return Account.builder()
                 .email(request.getEmail())
                 .fullName(request.getFullName())
                 .phone(request.getPhone())
                 .avatar(request.getAvatar())
                 .username(request.getUsername())
-                .password(encryptedPassword)
+                .password(request.getPassword())
                 .role(roleRepository.findById(request.getRoleId())
-                        .orElseThrow(() -> new AppException(ErrorCode.INVALID)))
+                        .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND)))
                 .build();
     }
 
     public AccountResponse toAccountResponse(Account account) {
-        BasicTextEncryptor textEncryptor = new BasicTextEncryptor();
 
-        textEncryptor.setPassword("mySecretKey");
-
-        String decryptedPassword = textEncryptor.decrypt(account.getPassword());
         return AccountResponse.builder()
                 .id(account.getId())
                 .username(account.getUsername())
-                .password(decryptedPassword)
+                .password(account.getPassword())
                 .email(account.getEmail())
                 .fullName(account.getFullName())
                 .phone(account.getPhone())

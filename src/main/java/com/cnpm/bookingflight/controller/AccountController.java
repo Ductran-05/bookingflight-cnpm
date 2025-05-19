@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import com.cnpm.bookingflight.dto.request.AccountRequest;
@@ -23,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class AccountController {
 
     final AccountService accountService;
+    final PasswordEncoder passwordEncoder;
 
     @GetMapping()
     public ResponseEntity<APIResponse<List<AccountResponse>>> getAllAccounts() {
@@ -37,6 +39,10 @@ public class AccountController {
     @PostMapping(consumes = { "multipart/form-data" })
     public ResponseEntity<APIResponse<AccountResponse>> createAccount(@RequestPart("account") AccountRequest request,
             @RequestPart(value = "avatar", required = false) MultipartFile avatar) throws IOException {
+
+        String hashPassword = passwordEncoder.encode(request.getPassword());
+        request.setPassword(hashPassword);
+
         return accountService.createAccount(request, avatar);
     }
 
