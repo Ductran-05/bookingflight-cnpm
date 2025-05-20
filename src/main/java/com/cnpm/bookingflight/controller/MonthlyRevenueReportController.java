@@ -9,10 +9,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -27,5 +24,12 @@ public class MonthlyRevenueReportController {
     public ResponseEntity<APIResponse<List<MonthlyRevenueReportResponse>>> generateReport(
             @Valid @RequestBody MonthlyRevenueReportRequest request) {
         return monthlyRevenueReportService.generateReport(request);
+    }
+
+    @GetMapping("/{month}/{year}")
+    public ResponseEntity<APIResponse<MonthlyRevenueReportResponse>> getReport(
+            @PathVariable int year,
+            @PathVariable int month) {
+        return monthlyRevenueReportService.getReport(year, month);
     }
 }

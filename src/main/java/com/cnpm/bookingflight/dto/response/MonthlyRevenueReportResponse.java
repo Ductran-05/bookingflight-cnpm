@@ -7,6 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,4 +20,17 @@ public class MonthlyRevenueReportResponse {
     double revenue;
     double percentage;
     int flightCount;
+    List<FlightDetail> flights;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class FlightDetail {
+        private Long flightId;
+        private String flightCode;
+        private int ticketCount;
+        private double revenue;
+        private double percentage;
+    }
 }

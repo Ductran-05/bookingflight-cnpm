@@ -64,7 +64,7 @@ public class FlightTicketSalesReportService {
         List<FlightTicketSalesReport> reports = new ArrayList<>();
         for (Flight flight : flights) {
             List<Ticket> tickets = ticketRepository.findAll().stream()
-                    .filter(ticket -> ticket.getFlight().getId().equals(flight.getId()) && ticket.getIsPaid())
+                    .filter(ticket -> ticket.getFlight().getId().equals(flight.getId()))
                     .toList();
             double flightRevenue = tickets.stream()
                     .mapToDouble(ticket -> ticket.getSeat().getPrice())
@@ -84,7 +84,7 @@ public class FlightTicketSalesReportService {
         final double finalTotalRevenue = totalRevenue;
         reports.forEach(report -> {
             List<Ticket> tickets = ticketRepository.findAll().stream()
-                    .filter(ticket -> ticket.getFlight().getId().equals(report.getFlight().getId()) && ticket.getIsPaid())
+                    .filter(ticket -> ticket.getFlight().getId().equals(report.getFlight().getId()) )
                     .toList();
             double flightRevenue = tickets.stream()
                     .mapToDouble(ticket -> ticket.getSeat().getPrice())
