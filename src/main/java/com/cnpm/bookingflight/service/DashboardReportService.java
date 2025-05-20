@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -147,7 +148,7 @@ public class DashboardReportService {
                     .sum();
         }
 
-        // Calculate revenue for this month (May 2025)
+        // Calculate revenue and flight count for this month (May 2025)
         LocalDate thisMonthStart = LocalDate.of(currentYear, 5, 1);
         LocalDate thisMonthEnd = LocalDate.of(currentYear, 5, 31);
         List<Flight> flightsThisMonth = flightRepository.findAll().stream()
@@ -169,7 +170,7 @@ public class DashboardReportService {
                     .sum();
         }
 
-        // Calculate revenue for last month (April 2025)
+        // Calculate revenue and flight count for last month (April 2025)
         LocalDate lastMonthStart = LocalDate.of(currentYear, 4, 1);
         LocalDate lastMonthEnd = LocalDate.of(currentYear, 4, 30);
         List<Flight> flightsLastMonth = flightRepository.findAll().stream()
@@ -219,7 +220,7 @@ public class DashboardReportService {
         } else {
             List<Map.Entry<String, Integer>> sortedAirlines = ticketCountByAirline.entrySet().stream()
                     .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                    .toList();
+                    .collect(Collectors.toList());
 
             int topCount = Math.min(3, sortedAirlines.size());
             double otherPercentage = 0.0;
@@ -245,6 +246,8 @@ public class DashboardReportService {
                 .revenueLastMonth(revenueLastMonth)
                 .flightCountThisYear(flightsThisYear.size())
                 .flightCountLastYear(flightsLastYear.size())
+                .flightCountThisMonth(flightsThisMonth.size())
+                .flightCountLastMonth(flightsLastMonth.size())
                 .airlineCount(airlineCount)
                 .airportCount(airportCount)
                 .airlinePopularity(airlinePopularity)

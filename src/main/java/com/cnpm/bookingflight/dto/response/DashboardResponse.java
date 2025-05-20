@@ -18,6 +18,8 @@ public class DashboardResponse {
     private double revenueLastMonth;
     private int flightCountThisYear;
     private int flightCountLastYear;
+    private int flightCountThisMonth;
+    private int flightCountLastMonth;
     private int airlineCount;
     private int airportCount;
     private Map<String, Double> airlinePopularity; // Map: airline name -> percentage
