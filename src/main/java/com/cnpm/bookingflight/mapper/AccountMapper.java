@@ -21,25 +21,22 @@ public class AccountMapper {
     final RoleRepository roleRepository;
 
     public Account toAccount(AccountRequest request) {
-        Role role = roleRepository.findByRoleName("user").orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
+        Role role = roleRepository.findById(request.getRoleId())
+                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
         return Account.builder()
-                .email(request.getEmail())
+                .username(request.getUsername())
+                .password(request.getPassword())
                 .fullName(request.getFullName())
                 .phone(request.getPhone())
                 .avatar(request.getAvatar())
-                .username(request.getUsername())
-                .password(request.getPassword())
                 .role(role)
                 .build();
     }
 
     public AccountResponse toAccountResponse(Account account) {
-
         return AccountResponse.builder()
                 .id(account.getId())
                 .username(account.getUsername())
-                .password(account.getPassword())
-                .email(account.getEmail())
                 .fullName(account.getFullName())
                 .phone(account.getPhone())
                 .avatar(account.getAvatar())

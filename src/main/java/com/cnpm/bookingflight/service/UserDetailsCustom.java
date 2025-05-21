@@ -27,7 +27,7 @@ public class UserDetailsCustom implements UserDetailsService {
             throw new UsernameNotFoundException("User not found with username: " + username);
         }
         return new User(
-                account.getEmail(),
+                account.getUsername(),
                 account.getPassword(),
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
     }

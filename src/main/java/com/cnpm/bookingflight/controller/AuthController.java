@@ -73,7 +73,6 @@ public class AuthController {
                 AccountRequest accountRequest = AccountRequest.builder()
                                 .username(request.getUsername())
                                 .password(request.getPassword())
-                                .email(request.getEmail())
                                 .fullName(request.getFullName())
                                 .phone(request.getPhone())
                                 .avatar(request.getAvatar())

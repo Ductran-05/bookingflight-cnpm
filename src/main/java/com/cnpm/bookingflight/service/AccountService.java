@@ -2,6 +2,7 @@ package com.cnpm.bookingflight.service;
 
 import com.cnpm.bookingflight.domain.Account;
 import com.cnpm.bookingflight.dto.request.AccountRequest;
+import com.cnpm.bookingflight.dto.request.ChangePasswordRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.AccountResponse;
 import com.cnpm.bookingflight.exception.AppException;
@@ -12,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,6 +27,7 @@ public class AccountService {
     final AccountRepository accountRepository;
     final AccountMapper accountMapper;
     final ImageUploadService imageUploadService;
+    final PasswordEncoder passwordEncoder;
 
     public ResponseEntity<APIResponse<List<AccountResponse>>> getAllAccounts() {
         APIResponse<List<AccountResponse>> response = APIResponse.<List<AccountResponse>>builder()
@@ -67,13 +70,14 @@ public class AccountService {
     }
 
     public ResponseEntity<APIResponse<AccountResponse>> updateAccount(Long id, AccountRequest request,
-            MultipartFile avatar)
+                                                                      MultipartFile avatar)
             throws IOException {
         Account existingAccount = accountRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
         Account updatedAccount = accountMapper.toAccount(request);
         updatedAccount.setId(id);
+        updatedAccount.setPassword(existingAccount.getPassword()); // Giữ nguyên password
         if (avatar != null && !avatar.isEmpty()) {
             String avatarUrl = imageUploadService.uploadImage(avatar, "avatars");
             updatedAccount.setAvatar(avatarUrl);
@@ -100,4 +104,21 @@ public class AccountService {
         return ResponseEntity.ok(response);
     }
 
+    public ResponseEntity<APIResponse<Void>> changePassword(Long id, ChangePasswordRequest request) {
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+
+        if (!passwordEncoder.matches(request.getOldPassword(), account.getPassword())) {
+            throw new AppException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        account.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        accountRepository.save(account);
+
+        APIResponse<Void> response = APIResponse.<Void>builder()
+                .status(200)
+                .message("Change password successfully")
+                .build();
+        return ResponseEntity.ok(response);
+    }
 }

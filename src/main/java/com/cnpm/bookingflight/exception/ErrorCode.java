@@ -13,7 +13,8 @@ public enum ErrorCode {
     ROLE_NOT_FOUND(1008, "Role not found"),
     FLIGHT_HAS_TICKETS(1009, "Flight has booked tickets and cannot be updated or deleted" ),
     INVALID_REPORT_DATE(1010, "Reports can only be retrieved for months before the current month" ),
-    REPORT_NOT_FOUND(1011, "Report not found" ),;
+    REPORT_NOT_FOUND(1011, "Report not found" ),
+    INVALID_PASSWORD(1012,  "Invalid password" ),;
 
     ErrorCode(int code, String message) {
         this.code = code;
