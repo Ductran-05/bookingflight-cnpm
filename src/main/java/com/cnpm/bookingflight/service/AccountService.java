@@ -3,6 +3,7 @@ package com.cnpm.bookingflight.service;
 import com.cnpm.bookingflight.domain.Account;
 import com.cnpm.bookingflight.domain.VerificationToken;
 import com.cnpm.bookingflight.dto.request.AccountRequest;
+import com.cnpm.bookingflight.dto.request.ChangePasswordRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.AccountResponse;
 import com.cnpm.bookingflight.exception.AppException;
@@ -115,5 +116,21 @@ public class AccountService {
                 .build();
         return ResponseEntity.ok(response);
     }
+    public ResponseEntity<APIResponse<Void>> changePassword(Long id, ChangePasswordRequest request) {
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
+        if (!passwordEncoder.matches(request.getOldPassword(), account.getPassword())) {
+            throw new AppException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        account.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        accountRepository.save(account);
+
+        APIResponse<Void> response = APIResponse.<Void>builder()
+                .status(200)
+                .message("Change password successfully")
+                .build();
+        return ResponseEntity.ok(response);
+    }
 }
