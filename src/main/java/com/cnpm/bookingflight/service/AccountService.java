@@ -4,6 +4,7 @@ import com.cnpm.bookingflight.domain.Account;
 import com.cnpm.bookingflight.domain.VerificationToken;
 import com.cnpm.bookingflight.dto.request.AccountRequest;
 import com.cnpm.bookingflight.dto.request.ChangePasswordRequest;
+import com.cnpm.bookingflight.dto.request.RegisterRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.AccountResponse;
 import com.cnpm.bookingflight.exception.AppException;
@@ -132,5 +133,42 @@ public class AccountService {
                 .message("Change password successfully")
                 .build();
         return ResponseEntity.ok(response);
+    }
+    public void registerUser(RegisterRequest request) {
+        // Kiểm tra email trùng
+        // if (accountRepository.findByEmail(request.getEmail()).isPresent()) {
+        // throw new AppException(ErrorCode.EXISTED);
+        // }
+
+        Account account = Account.builder()
+                .fullName(request.getFullName())
+                .phone(request.getPhone())
+                .avatar(request.getAvatar())
+                .username(request.getUsername())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .build();
+        accountRepository.save(account);
+
+        // Tạo token
+        String token = UUID.randomUUID().toString();
+        VerificationToken verificationToken = VerificationToken.builder()
+                .token(token)
+                .account(account)
+                .expiryDate(LocalDateTime.now().plusDays(01))
+                .build();
+        verificationTokenRepository.save(verificationToken);
+
+        // Gửi mail
+        String link = "http://localhost:8080/auth/confirm?token=" + token;
+        System.out.println(link);
+        emailService.send(account.getUsername(), buildEmail(link));
+    }
+
+    private String buildEmail(String link) {
+        return "Chào bạn,\n\n"
+                + "Cảm ơn bạn đã đăng ký tài khoản. Vui lòng nhấn vào liên kết dưới đây để xác thực email:\n"
+                + link + "\n\n"
+                + "Liên kết này sẽ hết hạn sau 24 giờ.\n\n"
+                + "Trân trọng.";
     }
 }
