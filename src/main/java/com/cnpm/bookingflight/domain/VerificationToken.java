@@ -1,11 +1,12 @@
 package com.cnpm.bookingflight.domain;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,26 +15,19 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 @Data
-@NoArgsConstructor
 @Entity
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
+@NoArgsConstructor
 @AllArgsConstructor
-public class Account {
+public class VerificationToken {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
+    String token;
 
-    String username;
-    String password;
-    String email;
-    String fullName;
-    String phone;
-    String avatar;
-    Boolean enabled = false;
+    @OneToOne
+    Account account;
 
-    @ManyToOne
-    @JoinColumn(name = "role_id")
-    Role role;
-
+    LocalDateTime expiryDate;
 }
