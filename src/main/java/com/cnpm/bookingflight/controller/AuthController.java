@@ -1,28 +1,30 @@
 package com.cnpm.bookingflight.controller;
 
-import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.cnpm.bookingflight.Utils.SecurityUtil;
-import com.cnpm.bookingflight.dto.request.AccountRequest;
+import com.cnpm.bookingflight.domain.Account;
+import com.cnpm.bookingflight.domain.VerificationToken;
 import com.cnpm.bookingflight.dto.request.LoginDTO;
 import com.cnpm.bookingflight.dto.request.RegisterRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
-import com.cnpm.bookingflight.dto.response.AccountResponse;
 import com.cnpm.bookingflight.dto.response.ResLoginDTO;
 
 import com.cnpm.bookingflight.mapper.AccountMapper;
 import com.cnpm.bookingflight.repository.AccountRepository;
+import com.cnpm.bookingflight.repository.VerificationTokenRepository;
 import com.cnpm.bookingflight.service.AccountService;
 
 import jakarta.validation.Valid;
@@ -40,6 +42,7 @@ public class AuthController {
         final AccountMapper accountMapper;
         final AccountService accountService;
         final PasswordEncoder passwordEncoder;
+        final VerificationTokenRepository verificationTokenRepository;
 
         @PostMapping("/login")
         public ResponseEntity<APIResponse<ResLoginDTO>> login(@Valid @RequestBody LoginDTO loginDTO) {
@@ -63,23 +66,31 @@ public class AuthController {
                 return ResponseEntity.ok(resLoginDTO);
         }
 
-        @PostMapping(value = "register", consumes = { "multipart/form-data" })
-        public ResponseEntity<APIResponse<AccountResponse>> createAccount(
-                        @RequestPart("registerInfo") RegisterRequest request,
-                        @RequestPart(value = "avatar", required = false) MultipartFile avatar) throws IOException {
+        @PostMapping("/register")
+        public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest request) {
+                accountService.registerUser(request);
+                return ResponseEntity.ok("Đăng ký thành công! Vui lòng kiểm tra email để xác thực.");
+        }
 
-                String hashPassword = passwordEncoder.encode(request.getPassword());
-                request.setPassword(hashPassword);
-                AccountRequest accountRequest = AccountRequest.builder()
-                                .username(request.getUsername())
-                                .password(request.getPassword())
-                                .fullName(request.getFullName())
-                                .phone(request.getPhone())
-                                .avatar(request.getAvatar())
-                                .roleId(null)
-                                .build();
+        @GetMapping("/auth/confirm")
+        public String confirm(@RequestParam("token") String token) {
+                Optional<VerificationToken> optionalToken = verificationTokenRepository.findByToken(token);
 
-                return accountService.createAccount(accountRequest, avatar);
+                if (optionalToken.isEmpty())
+                        return "Invalid token";
+
+                VerificationToken verificationToken = optionalToken.get();
+
+                if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+                        return "Token expired";
+                }
+
+                Account account = verificationToken.getAccount();
+                account.setEnabled(true);
+                accountRepository.save(account);
+
+                verificationTokenRepository.delete(verificationToken); // Optionally remove token
+                return "Email confirmed. Account activated.";
         }
 
 }

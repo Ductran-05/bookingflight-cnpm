@@ -37,7 +37,6 @@ public class SecurityConfig {
             CustomAuthenticationEntryPoint cusAuthEntryPoint) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/", "/login", "/accounts", "/accounts/{id}").permitAll() // Đảm bảo /login
                         // .anyRequest().authenticated()) // Các route khác yêu cầu xác thực

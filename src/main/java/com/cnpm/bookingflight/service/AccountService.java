@@ -1,14 +1,17 @@
 package com.cnpm.bookingflight.service;
 
 import com.cnpm.bookingflight.domain.Account;
+import com.cnpm.bookingflight.domain.VerificationToken;
 import com.cnpm.bookingflight.dto.request.AccountRequest;
-import com.cnpm.bookingflight.dto.request.ChangePasswordRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.AccountResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.mapper.AccountMapper;
 import com.cnpm.bookingflight.repository.AccountRepository;
+import com.cnpm.bookingflight.repository.VerificationTokenRepository;
+
+import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -18,16 +21,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AccountService {
+
+    private final EmailService emailService;
+
+    private final VerificationTokenRepository verificationTokenRepository;
+
+    final PasswordEncoder passwordEncoder;
     final AccountRepository accountRepository;
     final AccountMapper accountMapper;
     final ImageUploadService imageUploadService;
-    final PasswordEncoder passwordEncoder;
 
     public ResponseEntity<APIResponse<List<AccountResponse>>> getAllAccounts() {
         APIResponse<List<AccountResponse>> response = APIResponse.<List<AccountResponse>>builder()
@@ -70,7 +80,7 @@ public class AccountService {
     }
 
     public ResponseEntity<APIResponse<AccountResponse>> updateAccount(Long id, AccountRequest request,
-                                                                      MultipartFile avatar)
+            MultipartFile avatar)
             throws IOException {
         Account existingAccount = accountRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
@@ -93,9 +103,11 @@ public class AccountService {
         return ResponseEntity.ok(response);
     }
 
+    @Transactional
     public ResponseEntity<APIResponse<Void>> deleteAccount(Long id) {
-        accountRepository.findById(id)
+        Account existingAccount = accountRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        verificationTokenRepository.deleteByAccount(existingAccount);
         accountRepository.deleteById(id);
         APIResponse<Void> response = APIResponse.<Void>builder()
                 .status(204)
@@ -104,21 +116,4 @@ public class AccountService {
         return ResponseEntity.ok(response);
     }
 
-    public ResponseEntity<APIResponse<Void>> changePassword(Long id, ChangePasswordRequest request) {
-        Account account = accountRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-
-        if (!passwordEncoder.matches(request.getOldPassword(), account.getPassword())) {
-            throw new AppException(ErrorCode.INVALID_PASSWORD);
-        }
-
-        account.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        accountRepository.save(account);
-
-        APIResponse<Void> response = APIResponse.<Void>builder()
-                .status(200)
-                .message("Change password successfully")
-                .build();
-        return ResponseEntity.ok(response);
-    }
 }
