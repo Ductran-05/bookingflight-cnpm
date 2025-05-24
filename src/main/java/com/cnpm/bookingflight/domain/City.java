@@ -23,4 +23,5 @@ public class City {
     Long id;
     String cityCode;
     String cityName;
+    Boolean isDeleted = false;
 }

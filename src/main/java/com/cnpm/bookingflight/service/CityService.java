@@ -28,7 +28,7 @@ public class CityService {
         APIResponse<List<City>> response = APIResponse.<List<City>>builder()
                 .status(200)
                 .message("Get all cities successfully")
-                .data(cityRepository.findAll())
+                .data(cityRepository.findAllByIsDeletedFalse())
                 .build();
         return ResponseEntity.ok(response);
     }
@@ -47,38 +47,39 @@ public class CityService {
         if (existingCity != null) {
             throw new AppException(ErrorCode.EXISTED);
         }
-
+        City newCity = cityMapper.toCity(request);
+        newCity.setIsDeleted(false); // Đảm bảo isDeleted là false khi tạo mới
         APIResponse<City> response = APIResponse.<City>builder()
                 .status(201)
                 .message("Create city successfully")
-                .data(cityRepository.save(cityMapper.toCity(request)))
+                .data(cityRepository.save(newCity))
                 .build();
         return ResponseEntity.ok(response);
     }
 
     public ResponseEntity<APIResponse<City>> updateCity(Long id, CityRequest request) {
-        cityRepository.findById(id)
+        City existingCity = cityRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        City existingCity = cityMapper.toCity(request);
-        existingCity.setId(id);
-        cityRepository.save(existingCity);
+        City updatedCity = cityMapper.toCity(request);
+        updatedCity.setId(id);
+        updatedCity.setIsDeleted(existingCity.getIsDeleted()); // Giữ nguyên trạng thái isDeleted
         APIResponse<City> response = APIResponse.<City>builder()
                 .status(200)
                 .message("Update city successfully")
-                .data(existingCity)
+                .data(cityRepository.save(updatedCity))
                 .build();
         return ResponseEntity.ok(response);
     }
 
     public ResponseEntity<APIResponse<Void>> deleteCity(Long id) {
-        cityRepository.findById(id)
+        City existingCity = cityRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        cityRepository.deleteById(id);
+        existingCity.setIsDeleted(true); // Chuyển sang trạng thái xóa mềm
+        cityRepository.save(existingCity);
         APIResponse<Void> response = APIResponse.<Void>builder()
-                .status(204)
+                .status(200)
                 .message("Delete city successfully")
                 .build();
         return ResponseEntity.ok(response);
     }
-
 }

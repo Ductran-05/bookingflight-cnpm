@@ -28,9 +28,9 @@ public class Airport {
     Long id;
     String airportCode;
     String airportName;
+    Boolean isDeleted = false;
 
     @ManyToOne
     @JoinColumn(name = "cityId")
     City city;
-
 }

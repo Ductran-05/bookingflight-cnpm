@@ -31,9 +31,9 @@ public class Account {
     String avatar;
     String refreshToken;
     Boolean enabled = false;
+    Boolean isDeleted = false;
 
     @ManyToOne
     @JoinColumn(name = "role_id")
     Role role;
-
 }

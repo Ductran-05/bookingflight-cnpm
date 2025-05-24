@@ -21,5 +21,5 @@ public class Airline {
     String airlineCode;
     String airlineName;
     String logo;
-
+    Boolean isDeleted = false;
 }
