@@ -31,6 +31,13 @@ import org.springframework.security.config.Customizer;
 @EnableWebSecurity
 @Data
 public class SecurityConfig {
+    // biến môi trường
+    @Value("${projectjava.jwt.refresh-token-validity-in-seconds}")
+    private long refreshTokenExpiration;
+    @Value("${projectjava.jwt.access-token-validity-in-seconds}")
+    private long accessTokenExpiration;
+    @Value("${projectjava.jwt.base64-secret}")
+    private String jwtKey;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http,
@@ -38,9 +45,9 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/", "/login", "/accounts", "/accounts/{id}").permitAll() // Đảm bảo /login
-                        // .anyRequest().authenticated()) // Các route khác yêu cầu xác thực
-                        .anyRequest().permitAll()) // Tạm thời cho phép tất cả các route để kiểm tra
+                        .requestMatchers("/", "/login", "/register", "/auth/refresh").permitAll() // Đảm bảo /login
+                        .anyRequest().authenticated()) // Các route khác yêu cầu xác thực
+                // .anyRequest().permitAll()) // Tạm thời cho phép tất cả các route để kiểm tra
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(Customizer.withDefaults())
                         .authenticationEntryPoint(cusAuthEntryPoint))
@@ -54,31 +61,8 @@ public class SecurityConfig {
 
         return http.build();
     }
-    // @Bean
-    // public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    // http
-    // .csrf(csrf -> csrf.disable())
 
-    // .authorizeHttpRequests(authz -> authz
-    // .requestMatchers("/", "/login", "/accounts", "/accounts/{id}").permitAll() //
-    // Đảm bảo /login
-    // .anyRequest().authenticated()) // Các route khác yêu cầu xác thực
-    // // .anyRequest().permitAll()) // Tạm thời cho phép tất cả các route để kiểm
-    // tra
-    // .oauth2ResourceServer(oauth2 -> oauth2
-    // .jwt(Customizer.withDefaults()))
-
-    // .exceptionHandling(exceptions -> exceptions
-    // .authenticationEntryPoint(new BearerTokenAuthenticationEntryPoint()) // 401
-    // .accessDeniedHandler(new BearerTokenAccessDeniedHandler())) // 403
-
-    // .formLogin(f -> f.disable())
-    // .sessionManagement(session ->
-    // session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-
-    // return http.build();
-    // }
-
+    // thuật toán mã hóa password
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -105,12 +89,8 @@ public class SecurityConfig {
         };
     }
 
-    @Value("${projectjava.jwt.token-validity-in-seconds}")
-    private long jwtExpiration;
-    @Value("${projectjava.jwt.base64-secret}")
-    private String jwtKey;
-
-    private SecretKey getSecretKey() {
+    // getSecretKey: bằng base64 cơ sở sử dụng cho jwtKey
+    public SecretKey getSecretKey() {
         byte[] keyBytes = Base64.from(jwtKey).decode();
         return new SecretKeySpec(keyBytes, 0, keyBytes.length, SecurityUtil.JWT_ALGORITHM.getName());
     }

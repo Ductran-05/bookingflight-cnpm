@@ -29,9 +29,11 @@ public class Account {
     String fullName;
     String phone;
     String avatar;
+    String refreshToken;
     Boolean enabled = false;
 
     @ManyToOne
     @JoinColumn(name = "role_id")
     Role role;
+
 }

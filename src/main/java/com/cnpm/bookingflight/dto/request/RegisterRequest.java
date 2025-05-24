@@ -9,11 +9,9 @@ public class RegisterRequest {
 
     private String password;
 
-    private String email;
-
     private String fullName;
 
-    private String phone; // không bắt buộc
+    private String phone;
 
-    private String avatar; // không bắt buộc
+    private String avatar;
 }

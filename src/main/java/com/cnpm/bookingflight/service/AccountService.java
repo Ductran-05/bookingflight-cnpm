@@ -117,6 +117,7 @@ public class AccountService {
                 .build();
         return ResponseEntity.ok(response);
     }
+
     public ResponseEntity<APIResponse<Void>> changePassword(Long id, ChangePasswordRequest request) {
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
@@ -134,11 +135,13 @@ public class AccountService {
                 .build();
         return ResponseEntity.ok(response);
     }
-    public void registerUser(RegisterRequest request) {
+
+    public ResponseEntity<APIResponse<AccountResponse>> registerUser(RegisterRequest request) {
         // Kiểm tra email trùng
-        // if (accountRepository.findByEmail(request.getEmail()).isPresent()) {
-        // throw new AppException(ErrorCode.EXISTED);
-        // }
+        Account existingAccount = accountRepository.findByUsername(request.getUsername());
+        if (existingAccount != null) {
+            throw new AppException(ErrorCode.EXISTED);
+        }
 
         Account account = Account.builder()
                 .fullName(request.getFullName())
@@ -162,6 +165,13 @@ public class AccountService {
         String link = "http://localhost:8080/auth/confirm?token=" + token;
         System.out.println(link);
         emailService.send(account.getUsername(), buildEmail(link));
+
+        APIResponse<AccountResponse> response = APIResponse.<AccountResponse>builder()
+                .status(201)
+                .message("Create account successfully")
+                .data(accountMapper.toAccountResponse(account))
+                .build();
+        return ResponseEntity.ok(response);
     }
 
     private String buildEmail(String link) {
@@ -170,5 +180,18 @@ public class AccountService {
                 + link + "\n\n"
                 + "Liên kết này sẽ hết hạn sau 24 giờ.\n\n"
                 + "Trân trọng.";
+    }
+
+    public void updateAccountRefreshToken(String refreshToken, String username) {
+        Account currAccount = accountRepository.findByUsername(username);
+        if (currAccount != null) {
+            currAccount.setRefreshToken(refreshToken);
+            accountRepository.save(currAccount);
+        }
+    }
+
+    public Account findByUsernameAndRefreshToken(String username, String refreshToken) {
+        return accountRepository.findByUsernameAndRefreshToken(username, refreshToken)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
     }
 }

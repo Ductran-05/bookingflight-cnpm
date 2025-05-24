@@ -1,27 +1,38 @@
 package com.cnpm.bookingflight.controller;
 
+import java.io.IOException;
+import java.security.Security;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.cnpm.bookingflight.Utils.SecurityUtil;
+import com.cnpm.bookingflight.config.SecurityConfig;
 import com.cnpm.bookingflight.domain.Account;
 import com.cnpm.bookingflight.domain.VerificationToken;
+import com.cnpm.bookingflight.dto.request.AccountRequest;
 import com.cnpm.bookingflight.dto.request.LoginDTO;
 import com.cnpm.bookingflight.dto.request.RegisterRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
-import com.cnpm.bookingflight.dto.response.ResLoginDTO;
-
+import com.cnpm.bookingflight.dto.response.AccountResponse;
+import com.cnpm.bookingflight.dto.response.LoginResponse;
+import com.cnpm.bookingflight.dto.response.LoginResponse.UserLogin;
 import com.cnpm.bookingflight.mapper.AccountMapper;
 import com.cnpm.bookingflight.repository.AccountRepository;
 import com.cnpm.bookingflight.repository.VerificationTokenRepository;
@@ -43,33 +54,154 @@ public class AuthController {
         final AccountService accountService;
         final PasswordEncoder passwordEncoder;
         final VerificationTokenRepository verificationTokenRepository;
+        final SecurityConfig securityConfig;
 
         @PostMapping("/login")
-        public ResponseEntity<APIResponse<ResLoginDTO>> login(@Valid @RequestBody LoginDTO loginDTO) {
+        public ResponseEntity<APIResponse<LoginResponse>> login(@Valid @RequestBody LoginDTO loginDTO) {
                 // Nạp input gồm username/password vào Security
                 UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                                 loginDTO.getUsername(), loginDTO.getPassword());
-
-                // xác thực người dùng => cần viết hàm loadUserByUsername(hàm này sẽ được
-                // gọi trong câu lệnh dưới)
+                // xác thực người dùng => cần viết hàm loadUserByUsername
                 Authentication authentication = authenticationManagerBuilder.getObject()
                                 .authenticate(authenticationToken);
-                // tạo token cho người dùng
-                String token = securityUtil.generateToken(authentication);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                Account currAccount = accountRepository.findByUsername(loginDTO.getUsername());
 
-                APIResponse<ResLoginDTO> resLoginDTO = APIResponse.<ResLoginDTO>builder()
-                                .data(ResLoginDTO
-                                                .builder()
-                                                .accessToken(token)
-                                                .build())
+                // khởi tạo ResponseLogin
+                UserLogin userLogin = UserLogin.builder()
+                                .id(currAccount.getId())
+                                .name(currAccount.getFullName())
+                                .username(currAccount.getUsername())
                                 .build();
-                return ResponseEntity.ok(resLoginDTO);
+                LoginResponse loginResponse = LoginResponse.builder()
+                                .accessToken(securityUtil.createAccessToken(loginDTO.getUsername(), userLogin))
+                                .user(userLogin)
+                                .build();
+                // tao refresh token
+                String refreshToken = securityUtil.createRefreshToken(loginDTO.getUsername(), loginResponse);
+                // update refresh token cho account
+                accountService.updateAccountRefreshToken(refreshToken, loginDTO.getUsername());
+                // set cookie refresh token
+                ResponseCookie responseCookie = ResponseCookie.from("refreshToken", refreshToken)
+                                .httpOnly(true)
+                                .secure(true)
+                                .path("/")
+                                .maxAge(securityConfig.getRefreshTokenExpiration())
+                                .build();
+
+                // response data
+                APIResponse<LoginResponse> response = APIResponse.<LoginResponse>builder()
+                                .status(200)
+                                .message("Login successfully")
+                                .data(loginResponse)
+                                .build();
+                return ResponseEntity.ok()
+                                .header("Set-Cookie", responseCookie.toString())
+                                .body(response);
         }
 
-        @PostMapping("/register")
-        public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest request) {
-                accountService.registerUser(request);
-                return ResponseEntity.ok("Đăng ký thành công! Vui lòng kiểm tra email để xác thực.");
+        // lay nguoi dung da dang nhap
+        @GetMapping("/auth/user")
+        public ResponseEntity<APIResponse<UserLogin>> getUserLogin() {
+                String username = SecurityUtil.getCurrentUserLogin().isPresent()
+                                ? SecurityUtil.getCurrentUserLogin().get()
+                                : "";
+                Account currAccount = accountRepository.findByUsername(username);
+
+                LoginResponse.UserLogin userLogin = UserLogin.builder()
+                                .id(currAccount.getId())
+                                .name(currAccount.getFullName())
+                                .username(currAccount.getUsername())
+                                .build();
+
+                APIResponse<UserLogin> response = APIResponse.<UserLogin>builder()
+                                .status(200)
+                                .message("Get user login successfully")
+                                .data(userLogin)
+                                .build();
+                return ResponseEntity.ok(response);
+        }
+
+        // lay nguoi dung da dang nhap tu cookie
+        @GetMapping("/auth/refresh")
+        public ResponseEntity<APIResponse<LoginResponse>> refreshToken(
+                        @CookieValue(name = "refreshToken", defaultValue = "") String refreshToken) {
+                // check valid refresh token
+                Jwt decodedTokenJwt = securityUtil.checkValidRefreshToken(refreshToken);
+                String username = decodedTokenJwt.getSubject();
+                // kiem tra co ton tai tai khoan dua vao usename va refresh token
+                Account currAccount = accountService.findByUsernameAndRefreshToken(username, refreshToken);
+                LoginResponse.UserLogin userLogin = UserLogin.builder()
+                                .id(currAccount.getId())
+                                .name(currAccount.getFullName())
+                                .username(currAccount.getUsername())
+                                .build();
+                LoginResponse loginResponse = LoginResponse.builder()
+                                .accessToken(securityUtil.createAccessToken(username, userLogin))
+                                .user(userLogin)
+                                .build();
+                // tao refresh token moi
+                String newRefreshToken = securityUtil.createRefreshToken(username, loginResponse);
+                // updateAccount
+                accountService.updateAccountRefreshToken(newRefreshToken, username);
+                // set new cookie
+                ResponseCookie responseCookie = ResponseCookie.from("refreshToken", newRefreshToken)
+                                .httpOnly(true)
+                                .secure(true)
+                                .path("/")
+                                .maxAge(securityConfig.getRefreshTokenExpiration())
+                                .build();
+                // response data
+                APIResponse<LoginResponse> response = APIResponse.<LoginResponse>builder()
+                                .status(200)
+                                .message("Refresh token successfully")
+                                .data(loginResponse)
+                                .build();
+                return ResponseEntity.ok()
+                                .header("Set-Cookie", responseCookie.toString())
+                                .body(response);
+        }
+
+        @PostMapping("/auth/logout")
+        public ResponseEntity<APIResponse<String>> logout() {
+                String username = SecurityUtil.getCurrentUserLogin().isPresent()
+                                ? SecurityUtil.getCurrentUserLogin().get()
+                                : "";
+
+                accountService.updateAccountRefreshToken("", username);
+                // set "" cookie refresh token
+                ResponseCookie responseCookie = ResponseCookie.from("refreshToken", "")
+                                .httpOnly(true)
+                                .secure(true)
+                                .path("/")
+                                .maxAge(0)
+                                .build();
+
+                APIResponse<String> response = APIResponse.<String>builder()
+                                .status(200)
+                                .message("Logout successfully")
+                                .data("")
+                                .build();
+                return ResponseEntity.ok()
+                                .header("Set-Cookie", responseCookie.toString())
+                                .body(response);
+        }
+
+        @PostMapping(value = "/register", consumes = { "multipart/form-data" })
+        public ResponseEntity<APIResponse<AccountResponse>> register(
+                        @RequestPart("registerRequest") RegisterRequest request,
+                        @RequestPart(value = "avatar", required = false) MultipartFile avatar) throws IOException {
+                String hashPassword = passwordEncoder.encode(request.getPassword());
+                request.setPassword(hashPassword);
+                return accountService.registerUser(request);
+        }
+
+        public ResponseEntity<APIResponse<AccountResponse>> createAccount(
+                        @RequestPart("account") AccountRequest request,
+                        @RequestPart(value = "avatar", required = false) MultipartFile avatar) throws IOException {
+                String hashPassword = passwordEncoder.encode(request.getPassword());
+                request.setPassword(hashPassword);
+                return accountService.createAccount(request, avatar);
         }
 
         @GetMapping("/auth/confirm")
