@@ -27,7 +27,7 @@ public class AirlineService {
 
         public ResponseEntity<APIResponse<List<Airline>>> getAllAirlines() {
                 APIResponse<List<Airline>> response = APIResponse.<List<Airline>>builder()
-                        .data(airlineRepository.findAll())
+                        .data(airlineRepository.findAllByIsDeletedFalse())
                         .status(200)
                         .message("Get all airlines successfully")
                         .build();
@@ -40,6 +40,7 @@ public class AirlineService {
                         throw new AppException(ErrorCode.EXISTED);
                 }
                 Airline newAirline = airlineMapper.toAirline(request);
+                newAirline.setIsDeleted(false); // Đảm bảo isDeleted là false khi tạo mới
                 if (logo != null && !logo.isEmpty()) {
                         String logoUrl = imageUploadService.uploadImage(logo, "airline_logos");
                         newAirline.setLogo(logoUrl);
@@ -69,6 +70,7 @@ public class AirlineService {
 
                 Airline updatedAirline = airlineMapper.toAirline(request);
                 updatedAirline.setId(id);
+                updatedAirline.setIsDeleted(existingAirline.getIsDeleted()); // Giữ nguyên trạng thái isDeleted
                 if (logo != null && !logo.isEmpty()) {
                         String logoUrl = imageUploadService.uploadImage(logo, "airline_logos");
                         updatedAirline.setLogo(logoUrl);
@@ -85,11 +87,12 @@ public class AirlineService {
         }
 
         public ResponseEntity<APIResponse<Void>> deleteAirline(Long id) {
-                airlineRepository.findById(id)
+                Airline existingAirline = airlineRepository.findById(id)
                         .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-                airlineRepository.deleteById(id);
+                existingAirline.setIsDeleted(true); // Chuyển sang trạng thái xóa mềm
+                airlineRepository.save(existingAirline);
                 APIResponse<Void> response = APIResponse.<Void>builder()
-                        .status(204)
+                        .status(200)
                         .message("Delete airline successfully")
                         .build();
                 return ResponseEntity.ok(response);

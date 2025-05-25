@@ -6,9 +6,10 @@ import org.springframework.stereotype.Repository;
 
 import com.cnpm.bookingflight.domain.Airport;
 
+import java.util.List;
+
 @Repository
 public interface AirportRepository extends JpaRepository<Airport, Long>, JpaSpecificationExecutor<Airport> {
 
     Airport findByAirportCode(String airportCode);
-
 }

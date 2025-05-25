@@ -45,7 +45,8 @@ public class AccountService {
         APIResponse<List<AccountResponse>> response = APIResponse.<List<AccountResponse>>builder()
                 .status(200)
                 .message("Get all accounts successfully")
-                .data(accountRepository.findAll().stream().map(accountMapper::toAccountResponse).toList())
+                .data(accountRepository.findAllByIsDeletedFalse().stream().map(accountMapper::toAccountResponse)
+                        .toList())
                 .build();
         return ResponseEntity.ok(response);
     }
@@ -68,6 +69,7 @@ public class AccountService {
         }
 
         Account newAccount = accountMapper.toAccount(request);
+        newAccount.setIsDeleted(false); // Đảm bảo isDeleted là false khi tạo mới
         if (avatar != null && !avatar.isEmpty()) {
             String avatarUrl = imageUploadService.uploadImage(avatar, "avatars");
             newAccount.setAvatar(avatarUrl);
@@ -90,6 +92,7 @@ public class AccountService {
         Account updatedAccount = accountMapper.toAccount(request);
         updatedAccount.setId(id);
         updatedAccount.setPassword(existingAccount.getPassword()); // Giữ nguyên password
+        updatedAccount.setIsDeleted(existingAccount.getIsDeleted()); // Giữ nguyên trạng thái isDeleted
         if (avatar != null && !avatar.isEmpty()) {
             String avatarUrl = imageUploadService.uploadImage(avatar, "avatars");
             updatedAccount.setAvatar(avatarUrl);
@@ -109,10 +112,10 @@ public class AccountService {
     public ResponseEntity<APIResponse<Void>> deleteAccount(Long id) {
         Account existingAccount = accountRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        verificationTokenRepository.deleteByAccount(existingAccount);
-        accountRepository.deleteById(id);
+        existingAccount.setIsDeleted(true); // Chuyển sang trạng thái xóa mềm
+        accountRepository.save(existingAccount);
         APIResponse<Void> response = APIResponse.<Void>builder()
-                .status(204)
+                .status(200)
                 .message("Delete account successfully")
                 .build();
         return ResponseEntity.ok(response);
@@ -149,6 +152,7 @@ public class AccountService {
                 .avatar(request.getAvatar())
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
+                .isDeleted(false) // Đảm bảo isDeleted là false khi đăng ký
                 .build();
         accountRepository.save(account);
 

@@ -33,9 +33,9 @@ public class Account {
 
     @Builder.Default
     Boolean enabled = false;
+    Boolean isDeleted = false;
 
     @ManyToOne
     @JoinColumn(name = "role_id")
     Role role;
-
 }

@@ -26,8 +26,7 @@ public class AirportService {
     final AirportMapper airportMapper;
 
     public ResponseEntity<APIResponse<List<Airport>>> getAllAirports(Specification<Airport> spec) {
-
-        List<Airport> page = airportRepository.findAll(spec);
+        List<Airport> page = airportRepository.findAll(spec.and((root, query, cb) -> cb.equal(root.get("isDeleted"), false)));
         APIResponse<List<Airport>> response = APIResponse.<List<Airport>>builder()
                 .status(200)
                 .message("Get all airports successfully")
@@ -50,19 +49,22 @@ public class AirportService {
         if (existingAirport != null) {
             throw new AppException(ErrorCode.EXISTED);
         }
+        Airport newAirport = airportMapper.toAirport(request);
+        newAirport.setIsDeleted(false); // Đảm bảo isDeleted là false khi tạo mới
         APIResponse<Airport> response = APIResponse.<Airport>builder()
                 .status(201)
                 .message("Create airport successfully")
-                .data(airportRepository.save(airportMapper.toAirport(request)))
+                .data(airportRepository.save(newAirport))
                 .build();
         return ResponseEntity.ok(response);
     }
 
     public ResponseEntity<APIResponse<Airport>> updateAirport(Long id, AirportRequest request) {
-        airportRepository.findById(id)
+        Airport existingAirport = airportRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
         Airport updatedAirport = airportMapper.toAirport(request);
         updatedAirport.setId(id);
+        updatedAirport.setIsDeleted(existingAirport.getIsDeleted()); // Giữ nguyên trạng thái isDeleted
         APIResponse<Airport> response = APIResponse.<Airport>builder()
                 .status(200)
                 .message("Update airport successfully")
@@ -72,14 +74,14 @@ public class AirportService {
     }
 
     public ResponseEntity<APIResponse<Void>> deleteAirport(Long id) {
-        airportRepository.findById(id)
+        Airport existingAirport = airportRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        airportRepository.deleteById(id);
+        existingAirport.setIsDeleted(true); // Chuyển sang trạng thái xóa mềm
+        airportRepository.save(existingAirport);
         APIResponse<Void> response = APIResponse.<Void>builder()
-                .status(204)
+                .status(200)
                 .message("Delete airport successfully")
                 .build();
         return ResponseEntity.ok(response);
     }
-
 }
