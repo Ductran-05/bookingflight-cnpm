@@ -30,6 +30,8 @@ public class Account {
     String phone;
     String avatar;
     String refreshToken;
+
+    @Builder.Default
     Boolean enabled = false;
 
     @ManyToOne

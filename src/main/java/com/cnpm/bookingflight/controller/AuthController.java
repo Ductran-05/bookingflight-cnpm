@@ -1,7 +1,6 @@
 package com.cnpm.bookingflight.controller;
 
 import java.io.IOException;
-import java.security.Security;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -17,6 +16,7 @@ import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,7 +26,6 @@ import com.cnpm.bookingflight.Utils.SecurityUtil;
 import com.cnpm.bookingflight.config.SecurityConfig;
 import com.cnpm.bookingflight.domain.Account;
 import com.cnpm.bookingflight.domain.VerificationToken;
-import com.cnpm.bookingflight.dto.request.AccountRequest;
 import com.cnpm.bookingflight.dto.request.LoginDTO;
 import com.cnpm.bookingflight.dto.request.RegisterRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
@@ -45,6 +44,7 @@ import lombok.experimental.FieldDefaults;
 
 @RestController
 @Data
+@RequestMapping("/auth")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AuthController {
         final AuthenticationManagerBuilder authenticationManagerBuilder;
@@ -101,7 +101,7 @@ public class AuthController {
         }
 
         // lay nguoi dung da dang nhap
-        @GetMapping("/auth/user")
+        @GetMapping("/user")
         public ResponseEntity<APIResponse<UserLogin>> getUserLogin() {
                 String username = SecurityUtil.getCurrentUserLogin().isPresent()
                                 ? SecurityUtil.getCurrentUserLogin().get()
@@ -123,7 +123,7 @@ public class AuthController {
         }
 
         // lay nguoi dung da dang nhap tu cookie
-        @GetMapping("/auth/refresh")
+        @GetMapping("/refresh")
         public ResponseEntity<APIResponse<LoginResponse>> refreshToken(
                         @CookieValue(name = "refreshToken", defaultValue = "") String refreshToken) {
                 // check valid refresh token
@@ -162,7 +162,7 @@ public class AuthController {
                                 .body(response);
         }
 
-        @PostMapping("/auth/logout")
+        @PostMapping("/logout")
         public ResponseEntity<APIResponse<String>> logout() {
                 String username = SecurityUtil.getCurrentUserLogin().isPresent()
                                 ? SecurityUtil.getCurrentUserLogin().get()
@@ -196,15 +196,7 @@ public class AuthController {
                 return accountService.registerUser(request);
         }
 
-        public ResponseEntity<APIResponse<AccountResponse>> createAccount(
-                        @RequestPart("account") AccountRequest request,
-                        @RequestPart(value = "avatar", required = false) MultipartFile avatar) throws IOException {
-                String hashPassword = passwordEncoder.encode(request.getPassword());
-                request.setPassword(hashPassword);
-                return accountService.createAccount(request, avatar);
-        }
-
-        @GetMapping("/auth/confirm")
+        @GetMapping("/confirm")
         public String confirm(@RequestParam("token") String token) {
                 Optional<VerificationToken> optionalToken = verificationTokenRepository.findByToken(token);
 
