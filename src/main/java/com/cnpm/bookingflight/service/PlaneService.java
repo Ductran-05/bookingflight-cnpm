@@ -26,7 +26,7 @@ public class PlaneService {
     final PlaneMapper planeMapper;
 
     public ResponseEntity<APIResponse<List<Plane>>> getAllPlanes(Specification<Plane> spec) {
-        List<Plane> page = planeRepository.findAll(spec);
+        List<Plane> page = planeRepository.findAll(spec.and((root, query, cb) -> cb.equal(root.get("isDeleted"), false)));
         APIResponse<List<Plane>> response = APIResponse.<List<Plane>>builder()
                 .data(page)
                 .status(200)
@@ -49,8 +49,10 @@ public class PlaneService {
         if (existingPlane != null) {
             throw new AppException(ErrorCode.EXISTED);
         }
+        Plane newPlane = planeMapper.toPlane(request);
+        newPlane.setIsDeleted(false); // Đảm bảo isDeleted là false khi tạo mới
         APIResponse<Plane> response = APIResponse.<Plane>builder()
-                .data(planeRepository.save(planeMapper.toPlane(request)))
+                .data(planeRepository.save(newPlane))
                 .status(201)
                 .message("create plane successfully")
                 .build();
@@ -58,13 +60,13 @@ public class PlaneService {
     }
 
     public ResponseEntity<APIResponse<Plane>> updatePlane(Long id, PlaneRequest request) {
-        planeRepository.findById(id)
+        Plane existingPlane = planeRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        Plane existingPlane = planeMapper.toPlane(request);
-        existingPlane.setId(id);
-        planeRepository.save(existingPlane);
+        Plane updatedPlane = planeMapper.toPlane(request);
+        updatedPlane.setId(id);
+        updatedPlane.setIsDeleted(existingPlane.getIsDeleted()); // Giữ nguyên trạng thái isDeleted
         APIResponse<Plane> response = APIResponse.<Plane>builder()
-                .data(existingPlane)
+                .data(planeRepository.save(updatedPlane))
                 .status(200)
                 .message("update plane successfully")
                 .build();
@@ -72,11 +74,12 @@ public class PlaneService {
     }
 
     public ResponseEntity<APIResponse<Void>> deletePlane(Long id) {
-        planeRepository.findById(id)
+        Plane existingPlane = planeRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        planeRepository.deleteById(id);
+        existingPlane.setIsDeleted(true); // Chuyển sang trạng thái xóa mềm
+        planeRepository.save(existingPlane);
         APIResponse<Void> response = APIResponse.<Void>builder()
-                .status(204)
+                .status(200)
                 .message("delete plane successfully")
                 .build();
         return ResponseEntity.ok(response);

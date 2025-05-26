@@ -23,5 +23,5 @@ public class Role {
     Long id;
 
     String roleName;
-
+    Boolean isDeleted = false;
 }

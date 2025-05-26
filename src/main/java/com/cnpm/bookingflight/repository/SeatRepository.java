@@ -5,7 +5,10 @@ import org.springframework.stereotype.Repository;
 
 import com.cnpm.bookingflight.domain.Seat;
 
+import java.util.List;
+
 @Repository
 public interface SeatRepository extends JpaRepository<Seat, Long> {
     Seat findBySeatCode(String seatCode);
+    List<Seat> findAllByIsDeletedFalse();
 }

@@ -26,20 +26,20 @@ public class SeatService {
 
         public ResponseEntity<APIResponse<List<Seat>>> getAllSeats() {
                 APIResponse<List<Seat>> response = APIResponse.<List<Seat>>builder()
-                                .status(200)
-                                .message("Get all seats successfully")
-                                .data(seatRepository.findAll())
-                                .build();
+                        .status(200)
+                        .message("Get all seats successfully")
+                        .data(seatRepository.findAllByIsDeletedFalse())
+                        .build();
                 return ResponseEntity.ok(response);
         }
 
         public ResponseEntity<APIResponse<Seat>> getSeatById(Long id) {
                 APIResponse<Seat> response = APIResponse.<Seat>builder()
-                                .status(200)
-                                .message("Get seat by id successfully")
-                                .data(seatRepository.findById(id)
-                                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)))
-                                .build();
+                        .status(200)
+                        .message("Get seat by id successfully")
+                        .data(seatRepository.findById(id)
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)))
+                        .build();
                 return ResponseEntity.ok(response);
         }
 
@@ -48,41 +48,39 @@ public class SeatService {
                 if (existingSeat != null) {
                         throw new AppException(ErrorCode.EXISTED);
                 }
-
+                Seat newSeat = seatMapper.toSeat(request);
+                newSeat.setIsDeleted(false); // Đảm bảo isDeleted là false khi tạo mới
                 APIResponse<Seat> response = APIResponse.<Seat>builder()
-                                .status(201)
-                                .message("Create seat successfully")
-                                .data(seatRepository.save(seatMapper.toSeat(request)))
-                                .build();
+                        .status(201)
+                        .message("Create seat successfully")
+                        .data(seatRepository.save(newSeat))
+                        .build();
                 return ResponseEntity.ok(response);
         }
 
         public ResponseEntity<APIResponse<Seat>> updateSeat(Long id, SeatRequest request) {
-                seatRepository.findById(id)
-                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-
-                Seat existingSeat = seatMapper.toSeat(request);
-                existingSeat.setId(id);
-                seatRepository.save(existingSeat);
-
+                Seat existingSeat = seatRepository.findById(id)
+                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                Seat updatedSeat = seatMapper.toSeat(request);
+                updatedSeat.setId(id);
+                updatedSeat.setIsDeleted(existingSeat.getIsDeleted()); // Giữ nguyên trạng thái isDeleted
                 APIResponse<Seat> response = APIResponse.<Seat>builder()
-                                .status(200)
-                                .message("Update seat successfully")
-                                .data(existingSeat)
-                                .build();
+                        .status(200)
+                        .message("Update seat successfully")
+                        .data(seatRepository.save(updatedSeat))
+                        .build();
                 return ResponseEntity.ok(response);
         }
 
         public ResponseEntity<APIResponse<Void>> deleteSeat(Long id) {
-                seatRepository.findById(id)
-                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-
-                seatRepository.deleteById(id);
-
+                Seat existingSeat = seatRepository.findById(id)
+                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                existingSeat.setIsDeleted(true); // Chuyển sang trạng thái xóa mềm
+                seatRepository.save(existingSeat);
                 APIResponse<Void> response = APIResponse.<Void>builder()
-                                .status(204)
-                                .message("Delete seat successfully")
-                                .build();
+                        .status(200)
+                        .message("Delete seat successfully")
+                        .build();
                 return ResponseEntity.ok(response);
         }
 }

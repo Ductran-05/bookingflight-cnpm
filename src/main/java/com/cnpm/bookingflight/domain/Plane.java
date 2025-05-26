@@ -29,9 +29,9 @@ public class Plane {
 
     String planeCode;
     String planeName;
+    Boolean isDeleted = false;
 
     @ManyToOne
     @JoinColumn(name = "airlineId")
     Airline airline;
-
 }

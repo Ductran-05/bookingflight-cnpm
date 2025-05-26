@@ -37,22 +37,21 @@ public class RoleService {
 
         public ResponseEntity<APIResponse<List<RoleResponse>>> getRoles() {
                 APIResponse<List<RoleResponse>> response = APIResponse.<List<RoleResponse>>builder()
-                                .data(roleRepository.findAll().stream().map(roleMapper::toRoleResponse).toList())
-                                .status(200)
-                                .message("get roles successfully")
-                                .build();
-
+                        .data(roleRepository.findAllByIsDeletedFalse().stream().map(roleMapper::toRoleResponse).toList())
+                        .status(200)
+                        .message("get roles successfully")
+                        .build();
                 return ResponseEntity.ok(response);
         }
 
         public ResponseEntity<APIResponse<RoleResponse>> getRoleById(Long id) {
                 APIResponse<RoleResponse> response = APIResponse.<RoleResponse>builder()
-                                .data(roleRepository.findById(id)
-                                                .map(roleMapper::toRoleResponse)
-                                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)))
-                                .status(200)
-                                .message("get role by id successfully")
-                                .build();
+                        .data(roleRepository.findById(id)
+                                .map(roleMapper::toRoleResponse)
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)))
+                        .status(200)
+                        .message("get role by id successfully")
+                        .build();
                 return ResponseEntity.ok(response);
         }
 
@@ -61,61 +60,59 @@ public class RoleService {
                 if (existingRole != null) {
                         throw new AppException(ErrorCode.EXISTED);
                 }
-                Role savedRole = roleRepository.save(roleMapper.toRole(request));
+                Role newRole = roleMapper.toRole(request);
+                newRole.setIsDeleted(false); // Đảm bảo isDeleted là false khi tạo mới
+                Role savedRole = roleRepository.save(newRole);
 
                 for (Long pageId : request.getPages()) {
                         Page savedPage = pageRepository.findById(pageId)
-                                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
                         Page_Role page_Role = page_RoleMapper.toPage_Role(savedPage, savedRole);
                         page_RoleRepository.save(page_Role);
                 }
 
                 APIResponse<RoleResponse> response = APIResponse.<RoleResponse>builder()
-                                .data(roleMapper.toRoleResponse(savedRole))
-                                .status(200)
-                                .message("create role successfully")
-                                .build();
-
+                        .data(roleMapper.toRoleResponse(savedRole))
+                        .status(200)
+                        .message("create role successfully")
+                        .build();
                 return ResponseEntity.ok(response);
         }
 
         @Transactional
         public ResponseEntity<APIResponse<RoleResponse>> updateRole(Long id, RoleRequest request) {
                 Role savedRole = roleRepository.findById(id)
-                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
                 page_RoleRepository.deleteAllByRole(savedRole);
                 savedRole.setRoleName(request.getRoleName());
+                savedRole.setIsDeleted(savedRole.getIsDeleted()); // Giữ nguyên trạng thái isDeleted
                 roleRepository.save(savedRole);
 
                 for (Long pageId : request.getPages()) {
                         Page savedPage = pageRepository.findById(pageId)
-                                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
                         Page_Role page_Role = page_RoleMapper.toPage_Role(savedPage, savedRole);
                         page_RoleRepository.save(page_Role);
                 }
                 APIResponse<RoleResponse> response = APIResponse.<RoleResponse>builder()
-                                .data(roleMapper.toRoleResponse(savedRole))
-                                .status(200)
-                                .message("Update role successfully")
-                                .build();
-
+                        .data(roleMapper.toRoleResponse(savedRole))
+                        .status(200)
+                        .message("Update role successfully")
+                        .build();
                 return ResponseEntity.ok(response);
-
         }
 
         @Transactional
         public ResponseEntity<APIResponse<Void>> deleteRole(Long id) {
                 Role roleToDelete = roleRepository.findById(id)
-                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-
-                page_RoleRepository.deleteAllByRole(roleToDelete);
-                roleRepository.deleteById(id);
-
+                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                roleToDelete.setIsDeleted(true); // Chuyển sang trạng thái xóa mềm
+                roleRepository.save(roleToDelete);
                 APIResponse<Void> response = APIResponse.<Void>builder()
-                                .status(204)
-                                .message("Delete role successfully")
-                                .build();
+                        .status(200)
+                        .message("Delete role successfully")
+                        .build();
                 return ResponseEntity.ok(response);
         }
 }

@@ -13,7 +13,6 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @Entity
 @FieldDefaults(level = AccessLevel.PRIVATE)
-
 public class Seat {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,5 +22,5 @@ public class Seat {
     String seatName;
     Integer price;
     String description;
-
+    Boolean isDeleted = false;
 }
