@@ -45,7 +45,8 @@ public class AccountService {
         APIResponse<List<AccountResponse>> response = APIResponse.<List<AccountResponse>>builder()
                 .status(200)
                 .message("Get all accounts successfully")
-                .data(accountRepository.findAllByIsDeletedFalse().stream().map(accountMapper::toAccountResponse).toList())
+                .data(accountRepository.findAllByIsDeletedFalse().stream().map(accountMapper::toAccountResponse)
+                        .toList())
                 .build();
         return ResponseEntity.ok(response);
     }
@@ -62,7 +63,7 @@ public class AccountService {
 
     public ResponseEntity<APIResponse<AccountResponse>> createAccount(AccountRequest request, MultipartFile avatar)
             throws IOException {
-        Account account = accountRepository.findByUsername(request.getUsername());
+        Account account = accountRepository.findByUsername(request.getUsername()).orElse(null);
         if (account != null) {
             throw new AppException(ErrorCode.EXISTED);
         }
@@ -83,7 +84,7 @@ public class AccountService {
     }
 
     public ResponseEntity<APIResponse<AccountResponse>> updateAccount(Long id, AccountRequest request,
-                                                                      MultipartFile avatar)
+            MultipartFile avatar)
             throws IOException {
         Account existingAccount = accountRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
@@ -139,17 +140,22 @@ public class AccountService {
     }
 
     public ResponseEntity<APIResponse<AccountResponse>> registerUser(RegisterRequest request) {
-        Account existingAccount = accountRepository.findByUsername(request.getUsername());
+        // Kiểm tra email đã tạo tài khoản thành công hay chua
+        Account existingAccount = accountRepository.findByUsername(request.getUsername()).orElse(null);
         if (existingAccount != null) {
-            throw new AppException(ErrorCode.EXISTED);
+            if (existingAccount.getEnabled() == false) {
+                deleteAccount(existingAccount.getId());
+            } else {
+                throw new AppException(ErrorCode.EXISTED);
+            }
         }
-
+        // Tạo account chờ kích hoạt
         Account account = Account.builder()
                 .fullName(request.getFullName())
                 .phone(request.getPhone())
                 .avatar(request.getAvatar())
                 .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword()))
+                .password(request.getPassword())
                 .isDeleted(false) // Đảm bảo isDeleted là false khi đăng ký
                 .build();
         accountRepository.save(account);
@@ -185,7 +191,7 @@ public class AccountService {
     }
 
     public void updateAccountRefreshToken(String refreshToken, String username) {
-        Account currAccount = accountRepository.findByUsername(username);
+        Account currAccount = accountRepository.findByUsername(username).orElse(null);
         if (currAccount != null) {
             currAccount.setRefreshToken(refreshToken);
             accountRepository.save(currAccount);
