@@ -142,8 +142,12 @@ public class AccountService {
     public ResponseEntity<APIResponse<AccountResponse>> registerUser(RegisterRequest request) {
         // Kiểm tra email đã tạo tài khoản thành công hay chua
         Account existingAccount = accountRepository.findByUsername(request.getUsername());
-        if (existingAccount != null && existingAccount.getEnabled() == true) {
-            throw new AppException(ErrorCode.EXISTED);
+        if (existingAccount != null) {
+            if (existingAccount.getEnabled() == false) {
+                deleteAccount(existingAccount.getId());
+            } else {
+                throw new AppException(ErrorCode.EXISTED);
+            }
         }
         // Tạo account chờ kích hoạt
         Account account = Account.builder()
