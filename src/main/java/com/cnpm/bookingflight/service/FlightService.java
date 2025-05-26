@@ -1,13 +1,19 @@
 package com.cnpm.bookingflight.service;
 
 import com.cnpm.bookingflight.domain.Flight;
+import com.cnpm.bookingflight.domain.Flight_Airport;
+import com.cnpm.bookingflight.domain.Flight_Seat;
 import com.cnpm.bookingflight.dto.request.FlightRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.FlightResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.mapper.FlightMapper;
+import com.cnpm.bookingflight.mapper.Flight_AirportMapper;
+import com.cnpm.bookingflight.mapper.Flight_SeatMapper;
 import com.cnpm.bookingflight.repository.FlightRepository;
+import com.cnpm.bookingflight.repository.Flight_AirportRepository;
+import com.cnpm.bookingflight.repository.Flight_SeatRepository;
 import com.cnpm.bookingflight.repository.TicketRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +32,10 @@ public class FlightService {
     final FlightRepository flightRepository;
     final FlightMapper flightMapper;
     final TicketRepository ticketRepository;
+    final Flight_AirportMapper flightAirportMapper;
+    final Flight_SeatMapper flightSeatMapper;
+    final Flight_AirportRepository flightAirportRepository;
+    final Flight_SeatRepository flightSeatRepository;
 
     public ResponseEntity<APIResponse<List<FlightResponse>>> getAllFlights() {
         List<FlightResponse> flights = flightRepository.findAll().stream()
@@ -66,12 +76,33 @@ public class FlightService {
     }
 
     public ResponseEntity<APIResponse<FlightResponse>> createFlight(FlightRequest request) {
+        // Kiểm tra mã chuyến bay đã tồn tại
         Flight existingFlight = flightRepository.findByFlightCode(request.getFlightCode());
         if (existingFlight != null) {
             throw new AppException(ErrorCode.EXISTED);
         }
+
+        // Tạo và lưu chuyến bay
         Flight flight = flightMapper.toFlight(request);
         Flight savedFlight = flightRepository.save(flight);
+
+        // Lưu các sân bay trung gian (Flight_Airport)
+        if (request.getInterAirports() != null && !request.getInterAirports().isEmpty()) {
+            List<Flight_Airport> flightAirports = request.getInterAirports().stream()
+                    .map(flightAirportRequest -> flightAirportMapper.toFlight_Airport(flightAirportRequest, savedFlight.getId()))
+                    .collect(Collectors.toList());
+            flightAirportRepository.saveAll(flightAirports);
+        }
+
+        // Lưu các ghế (Flight_Seat)
+        if (request.getSeats() != null && !request.getSeats().isEmpty()) {
+            List<Flight_Seat> flightSeats = request.getSeats().stream()
+                    .map(flightSeatRequest -> flightSeatMapper.toFlight_Seat(flightSeatRequest, savedFlight.getId()))
+                    .collect(Collectors.toList());
+            flightSeatRepository.saveAll(flightSeats);
+        }
+
+        // Tạo response
         FlightResponse flightResponse = flightMapper.toFlightResponse(savedFlight)
                 .toBuilder()
                 .canUpdate(true)
