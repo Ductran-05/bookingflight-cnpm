@@ -32,6 +32,8 @@ import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.AccountResponse;
 import com.cnpm.bookingflight.dto.response.LoginResponse;
 import com.cnpm.bookingflight.dto.response.LoginResponse.UserLogin;
+import com.cnpm.bookingflight.exception.AppException;
+import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.mapper.AccountMapper;
 import com.cnpm.bookingflight.repository.AccountRepository;
 import com.cnpm.bookingflight.repository.VerificationTokenRepository;
@@ -65,7 +67,8 @@ public class AuthController {
                 Authentication authentication = authenticationManagerBuilder.getObject()
                                 .authenticate(authenticationToken);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                Account currAccount = accountRepository.findByUsername(loginDTO.getUsername());
+                Account currAccount = accountRepository.findByUsername(loginDTO.getUsername())
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
                 // khởi tạo ResponseLogin
                 UserLogin userLogin = UserLogin.builder()
@@ -106,7 +109,8 @@ public class AuthController {
                 String username = SecurityUtil.getCurrentUserLogin().isPresent()
                                 ? SecurityUtil.getCurrentUserLogin().get()
                                 : "";
-                Account currAccount = accountRepository.findByUsername(username);
+                Account currAccount = accountRepository.findByUsername(username)
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
                 LoginResponse.UserLogin userLogin = UserLogin.builder()
                                 .id(currAccount.getId())

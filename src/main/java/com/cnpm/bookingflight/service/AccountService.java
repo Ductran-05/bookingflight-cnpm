@@ -63,7 +63,7 @@ public class AccountService {
 
     public ResponseEntity<APIResponse<AccountResponse>> createAccount(AccountRequest request, MultipartFile avatar)
             throws IOException {
-        Account account = accountRepository.findByUsername(request.getUsername());
+        Account account = accountRepository.findByUsername(request.getUsername()).orElse(null);
         if (account != null) {
             throw new AppException(ErrorCode.EXISTED);
         }
@@ -141,7 +141,7 @@ public class AccountService {
 
     public ResponseEntity<APIResponse<AccountResponse>> registerUser(RegisterRequest request) {
         // Kiểm tra email đã tạo tài khoản thành công hay chua
-        Account existingAccount = accountRepository.findByUsername(request.getUsername());
+        Account existingAccount = accountRepository.findByUsername(request.getUsername()).orElse(null);
         if (existingAccount != null) {
             if (existingAccount.getEnabled() == false) {
                 deleteAccount(existingAccount.getId());
@@ -155,7 +155,7 @@ public class AccountService {
                 .phone(request.getPhone())
                 .avatar(request.getAvatar())
                 .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword()))
+                .password(request.getPassword())
                 .isDeleted(false) // Đảm bảo isDeleted là false khi đăng ký
                 .build();
         accountRepository.save(account);
@@ -191,7 +191,7 @@ public class AccountService {
     }
 
     public void updateAccountRefreshToken(String refreshToken, String username) {
-        Account currAccount = accountRepository.findByUsername(username);
+        Account currAccount = accountRepository.findByUsername(username).orElse(null);
         if (currAccount != null) {
             currAccount.setRefreshToken(refreshToken);
             accountRepository.save(currAccount);

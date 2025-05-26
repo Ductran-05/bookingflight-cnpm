@@ -30,6 +30,7 @@ public class Account {
     String fullName;
     String phone;
     String avatar;
+
     @Column(columnDefinition = "MEDIUMTEXT")
     String refreshToken;
 
