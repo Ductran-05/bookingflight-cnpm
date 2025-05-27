@@ -16,4 +16,6 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     Optional<Account> findByUsernameAndRefreshToken(String username, String refreshToken);
 
     List<Account> findAllByIsDeletedFalse();
+
+    Optional<Account> findByUsernameAndIsDeletedFalse(String username);
 }

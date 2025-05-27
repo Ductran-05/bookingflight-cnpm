@@ -15,7 +15,8 @@ public enum ErrorCode {
     FLIGHT_HAS_TICKETS(1009, "Flight has booked tickets and cannot be updated or deleted"),
     INVALID_REPORT_DATE(1010, "Reports can only be retrieved for months before the current month"),
     REPORT_NOT_FOUND(1011, "Report not found"),
-    INVALID_PASSWORD(1012, "Invalid password"),;
+    INVALID_PASSWORD(1012, "Invalid password"),
+    ACCOUNT_INACTIVE(1013, "Account is inactive");
 
     ErrorCode(int code, String message) {
         this.code = code;

@@ -19,8 +19,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.stereotype.Service;
 
 import com.cnpm.bookingflight.config.SecurityConfig;
-import com.cnpm.bookingflight.dto.response.LoginResponse;
-
+import com.cnpm.bookingflight.dto.response.AccountResponse;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
@@ -35,7 +34,7 @@ public class SecurityUtil {
     public static final MacAlgorithm JWT_ALGORITHM = MacAlgorithm.HS512;
 
     // tạo token cho người dùng
-    public String createAccessToken(String username, LoginResponse.UserLogin userLogin) {
+    public String createAccessToken(String username, AccountResponse accountResponse) {
         Instant now = Instant.now();
         Instant validity = now.plus(securityConfig.getAccessTokenExpiration(), ChronoUnit.SECONDS);
 
@@ -47,12 +46,12 @@ public class SecurityUtil {
              .expiresAt(validity)
              .subject(username)
              .claim("permissions", permissions)
-             .claim("user", userLogin)
+             .claim("account", accountResponse)
              .build();
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
     }
-    public String createRefreshToken(String username,LoginResponse loginResponse) {
+    public String createRefreshToken(String username,AccountResponse accountResponse) {
         Instant now = Instant.now();
         Instant validity = now.plus(securityConfig.getRefreshTokenExpiration(), ChronoUnit.SECONDS);
        
@@ -61,7 +60,7 @@ public class SecurityUtil {
             .issuedAt(now)
             .expiresAt(validity)
             .subject(username)
-            .claim("user", loginResponse.getUser())
+            .claim("account", accountResponse)
             .build();
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();

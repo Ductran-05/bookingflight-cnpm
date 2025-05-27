@@ -108,6 +108,7 @@ public class AccountService {
         return ResponseEntity.ok(response);
     }
 
+    // xóa mềm account
     @Transactional
     public ResponseEntity<APIResponse<Void>> deleteAccount(Long id) {
         Account existingAccount = accountRepository.findById(id)
@@ -117,6 +118,19 @@ public class AccountService {
         APIResponse<Void> response = APIResponse.<Void>builder()
                 .status(200)
                 .message("Delete account successfully")
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    // xóa cứng account
+    @Transactional
+    public ResponseEntity<APIResponse<Void>> hardDeleteAccount(Long id) {
+        accountRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        verificationTokenRepository.deleteByAccountId(id);
+        accountRepository.deleteById(id);
+        APIResponse<Void> response = APIResponse.<Void>builder()
+                .status(200)
+                .message("Hard delete account successfully")
                 .build();
         return ResponseEntity.ok(response);
     }
@@ -140,11 +154,12 @@ public class AccountService {
     }
 
     public ResponseEntity<APIResponse<AccountResponse>> registerUser(RegisterRequest request) {
-        // Kiểm tra email đã tạo tài khoản thành công hay chua
-        Account existingAccount = accountRepository.findByUsername(request.getUsername()).orElse(null);
+        // Kiểm tra email đã được tạo và còn tồn tại trên hệ thống chưa
+        Account existingAccount = accountRepository.findByUsernameAndIsDeletedFalse(request.getUsername()).orElse(null);
         if (existingAccount != null) {
             if (existingAccount.getEnabled() == false) {
-                deleteAccount(existingAccount.getId());
+                // Xóa mềm account
+                hardDeleteAccount(existingAccount.getId());
             } else {
                 throw new AppException(ErrorCode.EXISTED);
             }
