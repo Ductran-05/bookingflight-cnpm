@@ -3,15 +3,20 @@ package com.cnpm.bookingflight.controller;
 import java.io.IOException;
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import com.cnpm.bookingflight.domain.Account;
+import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.AccountRequest;
 import com.cnpm.bookingflight.dto.request.ChangePasswordRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.AccountResponse;
 import com.cnpm.bookingflight.service.AccountService;
+import com.turkraft.springfilter.boot.Filter;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +33,9 @@ public class AccountController {
     final PasswordEncoder passwordEncoder;
 
     @GetMapping()
-    public ResponseEntity<APIResponse<List<AccountResponse>>> getAllAccounts() {
-        return accountService.getAllAccounts();
+    public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllAccounts(@Filter Specification<Account> spec,
+            Pageable pageable) {
+        return accountService.getAllAccounts(spec, pageable);
     }
 
     @GetMapping("/{id}")
@@ -39,7 +45,7 @@ public class AccountController {
 
     @PostMapping(consumes = { "multipart/form-data" })
     public ResponseEntity<APIResponse<AccountResponse>> createAccount(@RequestPart("account") AccountRequest request,
-                                                                      @RequestPart(value = "avatar", required = false) MultipartFile avatar) throws IOException {
+            @RequestPart(value = "avatar", required = false) MultipartFile avatar) throws IOException {
         String hashPassword = passwordEncoder.encode(request.getPassword());
         request.setPassword(hashPassword);
         return accountService.createAccount(request, avatar);
@@ -47,8 +53,8 @@ public class AccountController {
 
     @PutMapping(value = "/{id}", consumes = { "multipart/form-data" })
     public ResponseEntity<APIResponse<AccountResponse>> updateAccount(@PathVariable("id") Long id,
-                                                                      @RequestPart("account") AccountRequest request,
-                                                                      @RequestPart(value = "avatar", required = false) MultipartFile avatar) throws IOException {
+            @RequestPart("account") AccountRequest request,
+            @RequestPart(value = "avatar", required = false) MultipartFile avatar) throws IOException {
         return accountService.updateAccount(id, request, avatar);
     }
 
@@ -59,7 +65,7 @@ public class AccountController {
 
     @PostMapping("/{id}/change-password")
     public ResponseEntity<APIResponse<Void>> changePassword(@PathVariable("id") Long id,
-                                                            @RequestBody ChangePasswordRequest request) {
+            @RequestBody ChangePasswordRequest request) {
         return accountService.changePassword(id, request);
     }
 }

@@ -2,16 +2,19 @@ package com.cnpm.bookingflight.service;
 
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.cnpm.bookingflight.domain.Plane;
+import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.PlaneRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.mapper.PlaneMapper;
+import com.cnpm.bookingflight.mapper.ResultPaginationMapper;
 import com.cnpm.bookingflight.repository.PlaneRepository;
 
 import lombok.AccessLevel;
@@ -24,13 +27,16 @@ import lombok.experimental.FieldDefaults;
 public class PlaneService {
     final PlaneRepository planeRepository;
     final PlaneMapper planeMapper;
+    final ResultPaginationMapper resultPaginationMapper;
 
-    public ResponseEntity<APIResponse<List<Plane>>> getAllPlanes(Specification<Plane> spec) {
-        List<Plane> page = planeRepository.findAll(spec.and((root, query, cb) -> cb.equal(root.get("isDeleted"), false)));
-        APIResponse<List<Plane>> response = APIResponse.<List<Plane>>builder()
-                .data(page)
+    public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllPlanes(Specification<Plane> spec, Pageable pageable) {
+        spec = spec.and((root, query, cb) -> cb.equal(root.get("isDeleted"), false));
+        ResultPaginationDTO result = resultPaginationMapper
+                .toResultPagination(planeRepository.findAll(spec, pageable));
+        APIResponse<ResultPaginationDTO> response = APIResponse.<ResultPaginationDTO>builder()
                 .status(200)
-                .message("get all planes successfully")
+                .message("Get all planes successfully")
+                .data(result)
                 .build();
         return ResponseEntity.ok(response);
     }

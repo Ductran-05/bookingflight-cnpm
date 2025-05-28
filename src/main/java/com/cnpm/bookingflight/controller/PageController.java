@@ -2,6 +2,8 @@ package com.cnpm.bookingflight.controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,9 +15,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cnpm.bookingflight.domain.Page;
+import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.PageRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.service.PageService;
+import com.turkraft.springfilter.boot.Filter;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -29,8 +33,9 @@ public class PageController {
     final PageService pageService;
 
     @GetMapping()
-    public ResponseEntity<APIResponse<List<Page>>> getAllPages() {
-        return pageService.getAllPages();
+    public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllPages(@Filter Specification<Page> spec,
+            Pageable pageable) {
+        return pageService.getAllPages(spec, pageable);
     }
 
     @GetMapping("/{id}")

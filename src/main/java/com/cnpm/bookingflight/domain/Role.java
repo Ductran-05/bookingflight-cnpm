@@ -23,5 +23,6 @@ public class Role {
     Long id;
 
     String roleName;
+    @Builder.Default
     Boolean isDeleted = false;
 }

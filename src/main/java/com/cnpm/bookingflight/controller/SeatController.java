@@ -2,6 +2,10 @@ package com.cnpm.bookingflight.controller;
 
 import java.util.List;
 
+import javax.naming.spi.DirStateFactory.Result;
+
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,9 +17,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cnpm.bookingflight.domain.Seat;
+import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.SeatRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.service.SeatService;
+import com.turkraft.springfilter.boot.Filter;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -29,8 +35,9 @@ public class SeatController {
     final SeatService seatService;
 
     @GetMapping()
-    public ResponseEntity<APIResponse<List<Seat>>> getSeats() {
-        return seatService.getAllSeats();
+    public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllSeats(@Filter Specification<Seat> spec,
+            Pageable pageable) {
+        return seatService.getAllSeats(spec, pageable);
     }
 
     @GetMapping("/{id}")

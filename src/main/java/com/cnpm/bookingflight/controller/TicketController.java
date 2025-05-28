@@ -2,13 +2,18 @@ package com.cnpm.bookingflight.controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.cnpm.bookingflight.domain.Ticket;
+import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.TicketRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.TicketResponse;
 import com.cnpm.bookingflight.service.TicketService;
+import com.turkraft.springfilter.boot.Filter;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +28,9 @@ public class TicketController {
     final TicketService ticketService;
 
     @GetMapping()
-    public ResponseEntity<APIResponse<List<TicketResponse>>> getAllTickets() {
-        return ticketService.getAllTickets();
+    public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllTickets(@Filter Specification<Ticket> spec,
+            Pageable pageable) {
+        return ticketService.getAllTickets(spec, pageable);
     }
 
     @GetMapping("/{id}")
@@ -39,7 +45,7 @@ public class TicketController {
 
     @PutMapping("/{id}")
     public ResponseEntity<APIResponse<TicketResponse>> updateTicket(@PathVariable("id") Long id,
-                                                                    @RequestBody TicketRequest request) {
+            @RequestBody TicketRequest request) {
         return ticketService.updateTicket(id, request);
     }
 }
