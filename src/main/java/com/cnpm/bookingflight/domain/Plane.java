@@ -29,6 +29,7 @@ public class Plane {
 
     String planeCode;
     String planeName;
+    @Builder.Default
     Boolean isDeleted = false;
 
     @ManyToOne

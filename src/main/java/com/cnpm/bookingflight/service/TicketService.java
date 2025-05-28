@@ -5,16 +5,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.cnpm.bookingflight.domain.Ticket;
 import com.cnpm.bookingflight.domain.id.Flight_SeatId;
+import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.TicketRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.TicketResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
+import com.cnpm.bookingflight.mapper.ResultPaginationMapper;
 import com.cnpm.bookingflight.mapper.TicketMapper;
 import com.cnpm.bookingflight.repository.Flight_SeatRepository;
 import com.cnpm.bookingflight.repository.TicketRepository;
@@ -32,12 +36,16 @@ public class TicketService {
     final Flight_SeatService flight_SeatService;
     final TicketMapper ticketMapper;
     final Flight_SeatRepository flight_SeatRepository;
+    final ResultPaginationMapper resultPaginationMapper;
 
-    public ResponseEntity<APIResponse<List<TicketResponse>>> getAllTickets() {
-        APIResponse<List<TicketResponse>> response = APIResponse.<List<TicketResponse>>builder()
-                .data(ticketMapper.toTicketResponseList(ticketRepository.findAll()))
+    public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllTickets(Specification<Ticket> spec,
+            Pageable pageable) {
+        ResultPaginationDTO result = resultPaginationMapper
+                .toResultPagination(ticketRepository.findAll(spec, pageable).map(ticketMapper::toTicketResponse));
+        APIResponse<ResultPaginationDTO> response = APIResponse.<ResultPaginationDTO>builder()
                 .status(200)
-                .message("get all tickets successfully")
+                .message("Get all tickets successfully")
+                .data(result)
                 .build();
         return ResponseEntity.ok(response);
     }

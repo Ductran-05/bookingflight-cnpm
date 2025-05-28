@@ -1,18 +1,21 @@
 package com.cnpm.bookingflight.controller;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.cnpm.bookingflight.domain.Flight;
+import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.FlightRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.FlightResponse;
 import com.cnpm.bookingflight.service.FlightService;
+import com.turkraft.springfilter.boot.Filter;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-
-import java.util.List;
 
 @RequestMapping("/flights")
 @RestController
@@ -23,8 +26,9 @@ public class FlightController {
     final FlightService flightService;
 
     @GetMapping()
-    public ResponseEntity<APIResponse<List<FlightResponse>>> getAllFlights() {
-        return flightService.getAllFlights();
+    public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllFlights(@Filter Specification<Flight> spec,
+            Pageable pageable) {
+        return flightService.getAllFlights(spec, pageable);
     }
 
     @GetMapping("/{id}")

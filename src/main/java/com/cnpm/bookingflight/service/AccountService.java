@@ -2,6 +2,7 @@ package com.cnpm.bookingflight.service;
 
 import com.cnpm.bookingflight.domain.Account;
 import com.cnpm.bookingflight.domain.VerificationToken;
+import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.AccountRequest;
 import com.cnpm.bookingflight.dto.request.ChangePasswordRequest;
 import com.cnpm.bookingflight.dto.request.RegisterRequest;
@@ -10,6 +11,7 @@ import com.cnpm.bookingflight.dto.response.AccountResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.mapper.AccountMapper;
+import com.cnpm.bookingflight.mapper.ResultPaginationMapper;
 import com.cnpm.bookingflight.repository.AccountRepository;
 import com.cnpm.bookingflight.repository.VerificationTokenRepository;
 
@@ -17,6 +19,10 @@ import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -40,13 +46,17 @@ public class AccountService {
     final AccountRepository accountRepository;
     final AccountMapper accountMapper;
     final ImageUploadService imageUploadService;
+    final ResultPaginationMapper resultPaginationMapper;
 
-    public ResponseEntity<APIResponse<List<AccountResponse>>> getAllAccounts() {
-        APIResponse<List<AccountResponse>> response = APIResponse.<List<AccountResponse>>builder()
+    public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllAccounts(Specification<Account> spec,
+            Pageable pageable) {
+        spec = spec.and((root, query, cb) -> cb.equal(root.get("isDeleted"), false));
+        Page<AccountResponse> page = accountRepository.findAll(spec, pageable).map(accountMapper::toAccountResponse);
+        ResultPaginationDTO resultPaginationDTO = resultPaginationMapper.toResultPagination(page);
+        APIResponse<ResultPaginationDTO> response = APIResponse.<ResultPaginationDTO>builder()
                 .status(200)
                 .message("Get all accounts successfully")
-                .data(accountRepository.findAllByIsDeletedFalse().stream().map(accountMapper::toAccountResponse)
-                        .toList())
+                .data(resultPaginationDTO)
                 .build();
         return ResponseEntity.ok(response);
     }
@@ -108,6 +118,7 @@ public class AccountService {
         return ResponseEntity.ok(response);
     }
 
+    // xóa mềm account
     @Transactional
     public ResponseEntity<APIResponse<Void>> deleteAccount(Long id) {
         Account existingAccount = accountRepository.findById(id)
@@ -117,6 +128,19 @@ public class AccountService {
         APIResponse<Void> response = APIResponse.<Void>builder()
                 .status(200)
                 .message("Delete account successfully")
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    // xóa cứng account
+    @Transactional
+    public ResponseEntity<APIResponse<Void>> hardDeleteAccount(Long id) {
+        accountRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        verificationTokenRepository.deleteByAccountId(id);
+        accountRepository.deleteById(id);
+        APIResponse<Void> response = APIResponse.<Void>builder()
+                .status(200)
+                .message("Hard delete account successfully")
                 .build();
         return ResponseEntity.ok(response);
     }
@@ -140,11 +164,12 @@ public class AccountService {
     }
 
     public ResponseEntity<APIResponse<AccountResponse>> registerUser(RegisterRequest request) {
-        // Kiểm tra email đã tạo tài khoản thành công hay chua
-        Account existingAccount = accountRepository.findByUsername(request.getUsername()).orElse(null);
+        // Kiểm tra email đã được tạo và còn tồn tại trên hệ thống chưa
+        Account existingAccount = accountRepository.findByUsernameAndIsDeletedFalse(request.getUsername()).orElse(null);
         if (existingAccount != null) {
             if (existingAccount.getEnabled() == false) {
-                deleteAccount(existingAccount.getId());
+                // Xóa mềm account
+                hardDeleteAccount(existingAccount.getId());
             } else {
                 throw new AppException(ErrorCode.EXISTED);
             }

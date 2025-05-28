@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cnpm.bookingflight.domain.Plane;
+import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.PlaneRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.service.PlaneService;
@@ -15,6 +16,7 @@ import lombok.experimental.FieldDefaults;
 
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,9 +33,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class PlaneController {
     final PlaneService planeService;
 
-    @GetMapping()
-    ResponseEntity<APIResponse<List<Plane>>> getAllPlanes(@Filter Specification<Plane> spec) {
-        return planeService.getAllPlanes(spec);
+    @GetMapping
+    ResponseEntity<APIResponse<ResultPaginationDTO>> getAllPlanes(@Filter Specification<Plane> spec,
+            Pageable pageable) {
+        return planeService.getAllPlanes(spec, pageable);
     }
 
     @GetMapping("/{id}")

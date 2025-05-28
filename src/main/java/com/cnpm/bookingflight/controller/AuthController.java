@@ -30,8 +30,6 @@ import com.cnpm.bookingflight.dto.request.LoginDTO;
 import com.cnpm.bookingflight.dto.request.RegisterRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.AccountResponse;
-import com.cnpm.bookingflight.dto.response.LoginResponse;
-import com.cnpm.bookingflight.dto.response.LoginResponse.UserLogin;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.mapper.AccountMapper;
@@ -59,29 +57,25 @@ public class AuthController {
         final SecurityConfig securityConfig;
 
         @PostMapping("/login")
-        public ResponseEntity<APIResponse<LoginResponse>> login(@Valid @RequestBody LoginDTO loginDTO) {
+        public ResponseEntity<APIResponse<String>> login(@Valid @RequestBody LoginDTO loginDTO) {
                 // Nạp input gồm username/password vào Security
                 UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                                 loginDTO.getUsername(), loginDTO.getPassword());
                 // xác thực người dùng => cần viết hàm loadUserByUsername
                 Authentication authentication = authenticationManagerBuilder.getObject()
                                 .authenticate(authenticationToken);
-                SecurityContextHolder.getContext().setAuthentication(authentication);
                 Account currAccount = accountRepository.findByUsername(loginDTO.getUsername())
                                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                if (!currAccount.getEnabled())
+                        throw new AppException(ErrorCode.ACCOUNT_INACTIVE);
+                // set data cho contextholder
+                SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                // khởi tạo ResponseLogin
-                UserLogin userLogin = UserLogin.builder()
-                                .id(currAccount.getId())
-                                .name(currAccount.getFullName())
-                                .username(currAccount.getUsername())
-                                .build();
-                LoginResponse loginResponse = LoginResponse.builder()
-                                .accessToken(securityUtil.createAccessToken(loginDTO.getUsername(), userLogin))
-                                .user(userLogin)
-                                .build();
+                // tao access token
+                AccountResponse currAccountResponse = accountMapper.toAccountResponse(currAccount);
+                String accessToken = securityUtil.createAccessToken(loginDTO.getUsername(), currAccountResponse);
                 // tao refresh token
-                String refreshToken = securityUtil.createRefreshToken(loginDTO.getUsername(), loginResponse);
+                String refreshToken = securityUtil.createRefreshToken(loginDTO.getUsername(), currAccountResponse);
                 // update refresh token cho account
                 accountService.updateAccountRefreshToken(refreshToken, loginDTO.getUsername());
                 // set cookie refresh token
@@ -92,11 +86,10 @@ public class AuthController {
                                 .maxAge(securityConfig.getRefreshTokenExpiration())
                                 .build();
 
-                // response data
-                APIResponse<LoginResponse> response = APIResponse.<LoginResponse>builder()
+                APIResponse<String> response = APIResponse.<String>builder()
                                 .status(200)
                                 .message("Login successfully")
-                                .data(loginResponse)
+                                .data(accessToken)
                                 .build();
                 return ResponseEntity.ok()
                                 .header("Set-Cookie", responseCookie.toString())
@@ -105,47 +98,36 @@ public class AuthController {
 
         // lay nguoi dung da dang nhap
         @GetMapping("/user")
-        public ResponseEntity<APIResponse<UserLogin>> getUserLogin() {
+        public ResponseEntity<APIResponse<AccountResponse>> getUserLogin() {
                 String username = SecurityUtil.getCurrentUserLogin().isPresent()
                                 ? SecurityUtil.getCurrentUserLogin().get()
                                 : "";
                 Account currAccount = accountRepository.findByUsername(username)
                                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
-                LoginResponse.UserLogin userLogin = UserLogin.builder()
-                                .id(currAccount.getId())
-                                .name(currAccount.getFullName())
-                                .username(currAccount.getUsername())
-                                .build();
-
-                APIResponse<UserLogin> response = APIResponse.<UserLogin>builder()
+                AccountResponse currAccountResponse = accountMapper.toAccountResponse(currAccount);
+                APIResponse<AccountResponse> response = APIResponse.<AccountResponse>builder()
                                 .status(200)
                                 .message("Get user login successfully")
-                                .data(userLogin)
+                                .data(currAccountResponse)
                                 .build();
                 return ResponseEntity.ok(response);
         }
 
         // lay nguoi dung da dang nhap tu cookie
         @GetMapping("/refresh")
-        public ResponseEntity<APIResponse<LoginResponse>> refreshToken(
+        public ResponseEntity<APIResponse<String>> refreshToken(
                         @CookieValue(name = "refreshToken", defaultValue = "") String refreshToken) {
                 // check valid refresh token
                 Jwt decodedTokenJwt = securityUtil.checkValidRefreshToken(refreshToken);
                 String username = decodedTokenJwt.getSubject();
                 // kiem tra co ton tai tai khoan dua vao usename va refresh token
                 Account currAccount = accountService.findByUsernameAndRefreshToken(username, refreshToken);
-                LoginResponse.UserLogin userLogin = UserLogin.builder()
-                                .id(currAccount.getId())
-                                .name(currAccount.getFullName())
-                                .username(currAccount.getUsername())
-                                .build();
-                LoginResponse loginResponse = LoginResponse.builder()
-                                .accessToken(securityUtil.createAccessToken(username, userLogin))
-                                .user(userLogin)
-                                .build();
+                AccountResponse currAccountResponse = accountMapper.toAccountResponse(currAccount);
+                // tao access token moi
+                String newAccessToken = securityUtil.createAccessToken(username, currAccountResponse);
                 // tao refresh token moi
-                String newRefreshToken = securityUtil.createRefreshToken(username, loginResponse);
+                String newRefreshToken = securityUtil.createRefreshToken(username, currAccountResponse);
                 // updateAccount
                 accountService.updateAccountRefreshToken(newRefreshToken, username);
                 // set new cookie
@@ -156,10 +138,10 @@ public class AuthController {
                                 .maxAge(securityConfig.getRefreshTokenExpiration())
                                 .build();
                 // response data
-                APIResponse<LoginResponse> response = APIResponse.<LoginResponse>builder()
+                APIResponse<String> response = APIResponse.<String>builder()
                                 .status(200)
                                 .message("Refresh token successfully")
-                                .data(loginResponse)
+                                .data(newAccessToken)
                                 .build();
                 return ResponseEntity.ok()
                                 .header("Set-Cookie", responseCookie.toString())
