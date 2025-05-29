@@ -13,4 +13,6 @@ public interface PageRepository extends JpaRepository<Page, Long>, JpaSpecificat
 
     Optional<Page> findByName(String name);
 
+    boolean existsByApiPathAndMethod(String pattern, String name);
+
 }
