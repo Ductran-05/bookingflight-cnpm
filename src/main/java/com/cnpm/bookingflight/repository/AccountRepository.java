@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import com.cnpm.bookingflight.domain.Account;
+import com.cnpm.bookingflight.domain.Role;
 
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Long>, JpaSpecificationExecutor<Account> {
@@ -19,4 +20,6 @@ public interface AccountRepository extends JpaRepository<Account, Long>, JpaSpec
     List<Account> findAllByIsDeletedFalse();
 
     Optional<Account> findByUsernameAndIsDeletedFalse(String username);
+
+    boolean existsByRole(Role role);
 }

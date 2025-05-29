@@ -12,6 +12,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class RoleRequest {
     String roleName;
+    String roleDescription;
 
     // List<Page_RoleRequest> pageRoles;
     List<Long> pages;

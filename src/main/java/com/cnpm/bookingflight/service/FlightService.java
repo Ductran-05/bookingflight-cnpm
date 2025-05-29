@@ -119,7 +119,7 @@ public class FlightService {
         }
 
         public ResponseEntity<APIResponse<FlightResponse>> updateFlight(Long id, FlightRequest request) {
-                Flight flight = flightRepository.findById(id)
+                flightRepository.findById(id)
                                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
                 if (ticketRepository.existsByFlightId(id)) {
                         throw new AppException(ErrorCode.FLIGHT_HAS_TICKETS);
@@ -142,7 +142,7 @@ public class FlightService {
         }
 
         public ResponseEntity<APIResponse<Void>> deleteFlightById(Long id) {
-                Flight flight = flightRepository.findById(id)
+                flightRepository.findById(id)
                                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
                 if (ticketRepository.existsByFlightId(id)) {
                         throw new AppException(ErrorCode.FLIGHT_HAS_TICKETS);

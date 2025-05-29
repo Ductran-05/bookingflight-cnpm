@@ -28,6 +28,7 @@ public class Airport {
     Long id;
     String airportCode;
     String airportName;
+    @Builder.Default
     Boolean isDeleted = false;
 
     @ManyToOne

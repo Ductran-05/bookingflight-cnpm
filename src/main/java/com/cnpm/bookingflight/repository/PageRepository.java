@@ -11,6 +11,6 @@ import com.cnpm.bookingflight.domain.Page;
 @Repository
 public interface PageRepository extends JpaRepository<Page, Long>, JpaSpecificationExecutor<Page> {
 
-    Optional<Page> findByPageName(String pageName);
+    Optional<Page> findByName(String name);
 
 }

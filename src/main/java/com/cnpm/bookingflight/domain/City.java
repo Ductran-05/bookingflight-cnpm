@@ -23,5 +23,6 @@ public class City {
     Long id;
     String cityCode;
     String cityName;
+    @Builder.Default
     Boolean isDeleted = false;
 }

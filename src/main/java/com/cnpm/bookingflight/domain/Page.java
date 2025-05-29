@@ -20,8 +20,9 @@ import lombok.experimental.FieldDefaults;
 public class Page {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
-
-    String pageName;
-
+    long id;
+    String name;
+    String apiPath;
+    String method;
+    String module;
 }

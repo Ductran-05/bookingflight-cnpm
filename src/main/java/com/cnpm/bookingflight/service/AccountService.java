@@ -30,7 +30,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -79,6 +78,7 @@ public class AccountService {
         }
 
         Account newAccount = accountMapper.toAccount(request);
+        newAccount.setEnabled(true);
         newAccount.setIsDeleted(false); // Đảm bảo isDeleted là false khi tạo mới
         if (avatar != null && !avatar.isEmpty()) {
             String avatarUrl = imageUploadService.uploadImage(avatar, "avatars");

@@ -15,7 +15,10 @@ public class PageMapper {
 
     public Page toPage(PageRequest pageRequest) {
         return Page.builder()
-                .pageName(pageRequest.getPageName())
+                .name(pageRequest.getName())
+                .apiPath(pageRequest.getApiPath())
+                .method(pageRequest.getMethod())
+                .module(pageRequest.getModule())
                 .build();
     }
 }

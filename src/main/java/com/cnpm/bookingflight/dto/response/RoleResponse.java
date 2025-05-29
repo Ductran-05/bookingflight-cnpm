@@ -19,5 +19,6 @@ import lombok.experimental.FieldDefaults;
 public class RoleResponse {
     Long id;
     String roleName;
+    String roleDescription;
     List<Page> pages;
 }

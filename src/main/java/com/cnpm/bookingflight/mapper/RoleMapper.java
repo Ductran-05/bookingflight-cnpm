@@ -25,6 +25,7 @@ public class RoleMapper {
     public Role toRole(RoleRequest request) {
         return Role.builder()
                 .roleName(request.getRoleName())
+                .roleDescription(request.getRoleDescription())
                 .build();
     }
 
@@ -35,6 +36,7 @@ public class RoleMapper {
         RoleResponse response = RoleResponse.builder()
                 .id(role.getId())
                 .roleName(role.getRoleName())
+                .roleDescription(role.getRoleDescription())
                 .pages(pages)
                 .build();
         return response;

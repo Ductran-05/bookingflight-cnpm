@@ -1,7 +1,5 @@
 package com.cnpm.bookingflight.controller;
 
-import java.util.List;
-
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cnpm.bookingflight.domain.Airport;
-import com.cnpm.bookingflight.domain.Page;
 import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.AirportRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;

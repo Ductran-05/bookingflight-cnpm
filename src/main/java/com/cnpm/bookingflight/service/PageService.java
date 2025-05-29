@@ -51,7 +51,7 @@ public class PageService {
         }
 
         public ResponseEntity<APIResponse<Page>> createPage(PageRequest request) {
-                pageRepository.findByPageName(request.getPageName())
+                pageRepository.findByName(request.getName())
                                 .ifPresent(p -> {
                                         throw new AppException(ErrorCode.EXISTED);
                                 });
@@ -66,7 +66,7 @@ public class PageService {
         public ResponseEntity<APIResponse<Page>> updatePage(Long id, PageRequest request) {
                 pageRepository.findById(id)
                                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-                pageRepository.findByPageName(request.getPageName())
+                pageRepository.findByName(request.getName())
                                 .ifPresent(p -> {
                                         throw new AppException(ErrorCode.EXISTED);
                                 });
