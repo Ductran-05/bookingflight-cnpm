@@ -3,6 +3,7 @@ package com.cnpm.bookingflight.config;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.HandlerMapping;
 
@@ -53,9 +54,11 @@ public class PermissionInterceptor implements HandlerInterceptor {
                     List<Page> pages = page_RoleRepository.findAllByRole(role).stream()
                             .map(page_Role -> page_Role.getPage())
                             .toList();
+                    AntPathMatcher matcher = new AntPathMatcher();
                     if (pages != null) {
                         for (Page page : pages) {
-                            if (page.getApiPath().equals(path) && page.getMethod().equals(httpMethod)) {
+                            if (page.getMethod().equalsIgnoreCase(httpMethod) &&
+                                    matcher.match(page.getApiPath(), requestURI)) {
                                 return true;
                             }
                         }
