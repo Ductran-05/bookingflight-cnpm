@@ -11,4 +11,6 @@ import com.cnpm.bookingflight.domain.id.Flight_AirportId;
 @Repository
 public interface Flight_AirportRepository extends JpaRepository<Flight_Airport, Flight_AirportId> {
     List<Flight_Airport> findByIdFlightId(Long flightId);
+
+    void deleteByIdFlightId(Long id);
 }

@@ -11,4 +11,6 @@ import com.cnpm.bookingflight.domain.id.Flight_SeatId;
 @Repository
 public interface Flight_SeatRepository extends JpaRepository<Flight_Seat, Flight_SeatId> {
     List<Flight_Seat> findByIdFlightId(Long flightId);
+
+    void deleteByIdFlightId(Long id);
 }
