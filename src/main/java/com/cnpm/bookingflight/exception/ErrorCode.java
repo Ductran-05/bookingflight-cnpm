@@ -16,7 +16,12 @@ public enum ErrorCode {
     INVALID_REPORT_DATE(1010, "Reports can only be retrieved for months before the current month"),
     REPORT_NOT_FOUND(1011, "Report not found"),
     INVALID_PASSWORD(1012, "Invalid password"),
-    ACCOUNT_INACTIVE(1013, "Account is inactive");
+    INVALID_FLIGHT_DURATION(1013, "Flight duration must be at least the minimum required minutes"),
+    INVALID_INTER_AIRPORTS(1014, "Number of intermediate airports exceeds the maximum allowed"),
+    INVALID_STOP_DURATION(1015, "Stop duration must be between the minimum and maximum allowed minutes"),
+    INVALID_TICKET_INFO(1016, "Invalid ticket information"),
+    INVALID_BOOKING_TIME(1017, "Booking time is too late"),
+    ACCOUNT_INACTIVE(1018, "Account is inactive"),;
 
     ErrorCode(int code, String message) {
         this.code = code;

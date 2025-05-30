@@ -1,5 +1,7 @@
 package com.cnpm.bookingflight.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,6 +11,9 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CityRequest {
+    @NotBlank(message = "cityCode must not be blank")
     String cityCode;
+
+    @NotBlank(message = "cityName must not be blank")
     String cityName;
 }

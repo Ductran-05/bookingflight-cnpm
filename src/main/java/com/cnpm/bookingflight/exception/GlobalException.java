@@ -22,7 +22,7 @@ public class GlobalException {
     ResponseEntity<APIResponse<Void>> handleAppException(AppException exception) {
         APIResponse<Void> response = APIResponse.<Void>builder()
                 .status(exception.getErrorCode().getCode())
-                .message(exception.getErrorCode().getMessage())
+                .message(exception.getCustomMessage())
                 .build();
         return ResponseEntity.badRequest().body(response);
     }

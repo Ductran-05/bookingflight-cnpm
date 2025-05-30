@@ -2,6 +2,8 @@ package com.cnpm.bookingflight.mapper;
 
 import java.util.List;
 
+import com.cnpm.bookingflight.domain.Flight;
+import com.cnpm.bookingflight.domain.Seat;
 import org.springframework.stereotype.Component;
 
 import com.cnpm.bookingflight.domain.Ticket;
@@ -72,4 +74,21 @@ public class TicketMapper {
                         .map(this::toTicketResponse)
                         .toList();
         }
+        public Ticket toTicket(TicketRequest.TicketInfo ticketInfo, Long flightId) {
+                Flight flight = flightRepository.findById(flightId)
+                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                Seat seat = seatRepository.findById(ticketInfo.getSeatId())
+                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+
+                return Ticket.builder()
+                        .flight(flight)
+                        .seat(seat)
+                        .passengerName(ticketInfo.getPassengerName())
+                        .passengerEmail(ticketInfo.getPassengerEmail())
+                        .passengerPhone(ticketInfo.getPassengerPhone())
+                        .passengerIDCard(ticketInfo.getPassengerIDCard())
+                        .isPaid(false)
+                        .build();
+        }
+
 }
