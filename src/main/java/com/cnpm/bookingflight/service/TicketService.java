@@ -207,8 +207,8 @@ public class TicketService {
 
         for (int month = 1; month <= 12; month++) {
             long soldTickets = ticketRepository.countTicketsByMonth(currentYear, month);
-            long issuedTickets = ticketRepository.sumFlightSeatQuantityByMonth(currentYear, month);
-            monthlyBookings.add(new BookingRateResponse.MonthlyBooking(month, soldTickets, issuedTickets));
+            long bookedTickets = ticketRepository.sumFlightSeatQuantityByMonth(currentYear, month);
+            monthlyBookings.add(new BookingRateResponse.MonthlyBooking(month, soldTickets,bookedTickets));
         }
 
         bookingRateResponse.setMonthlyBookings(monthlyBookings);

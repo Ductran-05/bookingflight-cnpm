@@ -6,23 +6,21 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
-import java.util.List;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class BookingRateResponse {
-    int year;
-    List<MonthlyBooking> monthlyBookings;
+public class AirlinePopularityResponse {
+    AirlineInfo airline1;
+    AirlineInfo airline2;
+    AirlineInfo otherAirlines;
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     @FieldDefaults(level = AccessLevel.PRIVATE)
-    public static class MonthlyBooking {
-        int month;
-        long bookedTickets;
-        long soldTickets;
+    public static class AirlineInfo {
+        String airlineName;
+        double percentage;
     }
 }
