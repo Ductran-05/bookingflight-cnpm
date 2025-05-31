@@ -22,7 +22,8 @@ public enum ErrorCode {
     INVALID_TICKET_INFO(1016, "Invalid ticket information"),
     INVALID_BOOKING_TIME(1017, "Booking time is too late"),
     ACCOUNT_INACTIVE(1018, "Account is inactive"),
-    INVALID_PERIOD_TYPE(1019, "Invalid period type, must be 'month' or 'year'");
+    INVALID_PERIOD_TYPE(1019, "Invalid period type, must be 'month' or 'year'"),
+    CANNOT_REFUND(1020, "Cannot refund ticket");
 
     ErrorCode(int code, String message) {
         this.code = code;

@@ -6,6 +6,7 @@ import com.cnpm.bookingflight.dto.request.TicketRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.BookingRateResponse;
 import com.cnpm.bookingflight.dto.response.RevenueResponse;
+import com.cnpm.bookingflight.dto.response.TicketRefundCheckResponse;
 import com.cnpm.bookingflight.dto.response.TicketResponse;
 import com.cnpm.bookingflight.service.TicketService;
 import com.turkraft.springfilter.boot.Filter;
@@ -57,5 +58,15 @@ public class TicketController {
     @GetMapping("/booking-rate")
     public ResponseEntity<APIResponse<BookingRateResponse>> getBookingRate() {
         return ticketService.getBookingRate();
+    }
+
+    @GetMapping("/{id}/refund-check")
+    public ResponseEntity<APIResponse<TicketRefundCheckResponse>> checkRefund(@PathVariable("id") Long ticketId) {
+        return ticketService.checkRefund(ticketId);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<APIResponse<Void>> deleteTicket(@PathVariable("id") Long ticketId) {
+        return ticketService.deleteTicket(ticketId);
     }
 }
