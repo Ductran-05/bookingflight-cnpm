@@ -51,7 +51,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated()) // Các route khác yêu cầu xác thực
                 // .anyRequest().permitAll()) // Tạm thời cho phép tất cả các route để kiểm tra
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(Customizer.withDefaults())
+                        .jwt(jwt -> jwt
+                                .jwtAuthenticationConverter(new CustomJwtAuthenticationConverter()))
                         .authenticationEntryPoint(cusAuthEntryPoint))
 
                 .exceptionHandling(exceptions -> exceptions

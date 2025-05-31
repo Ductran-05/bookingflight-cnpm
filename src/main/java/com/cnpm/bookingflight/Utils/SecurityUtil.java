@@ -38,15 +38,13 @@ public class SecurityUtil {
         Instant now = Instant.now();
         Instant validity = now.plus(securityConfig.getAccessTokenExpiration(), ChronoUnit.SECONDS);
 
-        // hardcode permissions
-        List<String> permissions = List.of("ROLE_USER_READ", "ROLE_USER_WRITE");
         // @formatter:off
         JwtClaimsSet claims = JwtClaimsSet.builder()
              .issuedAt(now)
              .expiresAt(validity)
              .subject(username)
-             .claim("permissions", permissions)
              .claim("account", accountResponse)
+             .claim("token_type", "access")
              .build();
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
@@ -61,6 +59,7 @@ public class SecurityUtil {
             .expiresAt(validity)
             .subject(username)
             .claim("account", accountResponse)
+            .claim("token_type", "refresh")
             .build();
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();

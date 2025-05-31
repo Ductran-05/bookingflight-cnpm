@@ -45,6 +45,9 @@ public class PermissionInterceptor implements HandlerInterceptor {
         String username = SecurityUtil.getCurrentUserLogin().orElse("");
         if (!username.isEmpty()) {
             Account account = accountRepository.findByUsername(username).orElse(null);
+            if (account.getRole() == null) {
+                throw new AppException(ErrorCode.ROLE_NOT_FOUND);
+            }
             if (account.getRole().getRoleName().equals("ADMIN")) {
                 return true;
             }

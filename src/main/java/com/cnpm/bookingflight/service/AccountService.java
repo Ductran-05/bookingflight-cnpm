@@ -13,6 +13,7 @@ import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.mapper.AccountMapper;
 import com.cnpm.bookingflight.mapper.ResultPaginationMapper;
 import com.cnpm.bookingflight.repository.AccountRepository;
+import com.cnpm.bookingflight.repository.RoleRepository;
 import com.cnpm.bookingflight.repository.VerificationTokenRepository;
 
 import jakarta.transaction.Transactional;
@@ -46,6 +47,7 @@ public class AccountService {
     final AccountMapper accountMapper;
     final ImageUploadService imageUploadService;
     final ResultPaginationMapper resultPaginationMapper;
+    final RoleRepository roleRepository;
 
     public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllAccounts(Specification<Account> spec,
             Pageable pageable) {
@@ -182,6 +184,7 @@ public class AccountService {
                 .username(request.getUsername())
                 .password(request.getPassword())
                 .isDeleted(false) // Đảm bảo isDeleted là false khi đăng ký
+                .role(roleRepository.findByRoleName("USER").orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)))
                 .build();
         accountRepository.save(account);
 
