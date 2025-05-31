@@ -8,6 +8,8 @@ import com.cnpm.bookingflight.domain.id.Flight_SeatId;
 import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.TicketRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
+import com.cnpm.bookingflight.dto.response.BookingRateResponse;
+import com.cnpm.bookingflight.dto.response.RevenueResponse;
 import com.cnpm.bookingflight.dto.response.TicketResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
@@ -26,6 +28,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -154,6 +157,66 @@ public class TicketService {
                 .status(200)
                 .message("Update ticket successfully")
                 .data(ticketMapper.toTicketResponse(ticketRepository.save(updatedTicket)))
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity<APIResponse<RevenueResponse>> getRevenue(String period) {
+        LocalDate currentDate = LocalDate.now();
+        int currentYear = currentDate.getYear();
+        int currentMonth = currentDate.getMonthValue();
+
+        RevenueResponse revenueResponse = new RevenueResponse();
+        revenueResponse.setPeriodType(period);
+
+        switch (period.toLowerCase()) {
+            case "month":
+                double currentMonthRevenue = ticketRepository.calculateRevenueByMonth(currentYear, currentMonth);
+                double previousMonthRevenue = ticketRepository.calculateRevenueByMonth(
+                        currentMonth == 1 ? currentYear - 1 : currentYear,
+                        currentMonth == 1 ? 12 : currentMonth - 1
+                );
+                revenueResponse.setCurrentPeriodRevenue(currentMonthRevenue);
+                revenueResponse.setPreviousPeriodRevenue(previousMonthRevenue);
+                break;
+
+            case "year":
+                double currentYearRevenue = ticketRepository.calculateRevenueByYear(currentYear);
+                double previousYearRevenue = ticketRepository.calculateRevenueByYear(currentYear - 1);
+                revenueResponse.setCurrentPeriodRevenue(currentYearRevenue);
+                revenueResponse.setPreviousPeriodRevenue(previousYearRevenue);
+                break;
+
+            default:
+                throw new AppException(ErrorCode.INVALID_PERIOD_TYPE);
+        }
+
+        APIResponse<RevenueResponse> response = APIResponse.<RevenueResponse>builder()
+                .status(200)
+                .message("Get revenue successfully")
+                .data(revenueResponse)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity<APIResponse<BookingRateResponse>> getBookingRate() {
+        int currentYear = LocalDate.now().getYear();
+        BookingRateResponse bookingRateResponse = new BookingRateResponse();
+        bookingRateResponse.setYear(currentYear);
+        List<BookingRateResponse.MonthlyBooking> monthlyBookings = new ArrayList<>();
+
+        for (int month = 1; month <= 12; month++) {
+            long soldTickets = ticketRepository.countTicketsByMonth(currentYear, month);
+            long issuedTickets = ticketRepository.sumFlightSeatQuantityByMonth(currentYear, month);
+            monthlyBookings.add(new BookingRateResponse.MonthlyBooking(month, soldTickets, issuedTickets));
+        }
+
+        bookingRateResponse.setMonthlyBookings(monthlyBookings);
+
+        APIResponse<BookingRateResponse> response = APIResponse.<BookingRateResponse>builder()
+                .status(200)
+                .message("Get booking rate successfully")
+                .data(bookingRateResponse)
                 .build();
         return ResponseEntity.ok(response);
     }
