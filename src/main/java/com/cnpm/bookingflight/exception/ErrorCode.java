@@ -21,7 +21,9 @@ public enum ErrorCode {
     INVALID_STOP_DURATION(1015, "Stop duration must be between the minimum and maximum allowed minutes"),
     INVALID_TICKET_INFO(1016, "Invalid ticket information"),
     INVALID_BOOKING_TIME(1017, "Booking time is too late"),
-    ACCOUNT_INACTIVE(1018, "Account is inactive"),;
+    ACCOUNT_INACTIVE(1018, "Account is inactive"),
+    INVALID_PERIOD_TYPE(1019, "Invalid period type, must be 'month' or 'year'"),
+    CANNOT_REFUND(1020, "Cannot refund ticket");
 
     ErrorCode(int code, String message) {
         this.code = code;

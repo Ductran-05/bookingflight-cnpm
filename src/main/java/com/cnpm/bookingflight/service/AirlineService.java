@@ -4,6 +4,7 @@ import com.cnpm.bookingflight.domain.Airline;
 import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.AirlineRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
+import com.cnpm.bookingflight.dto.response.AirlinePopularityResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.mapper.AirlineMapper;
@@ -12,7 +13,6 @@ import com.cnpm.bookingflight.repository.AirlineRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -21,6 +21,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -32,57 +35,57 @@ public class AirlineService {
         final ResultPaginationMapper resultPaginationMapper;
 
         public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllAirlines(Specification<Airline> spec,
-                        Pageable pageable) {
+                                                                               Pageable pageable) {
                 spec = spec.and((root, query, cb) -> cb.equal(root.get("isDeleted"), false));
                 Page<Airline> page = airlineRepository.findAll(spec, pageable);
                 ResultPaginationDTO resultPaginationDTO = resultPaginationMapper.toResultPagination(page);
                 APIResponse<ResultPaginationDTO> response = APIResponse.<ResultPaginationDTO>builder()
-                                .status(200)
-                                .message("Get all airlines successfully")
-                                .data(resultPaginationDTO)
-                                .build();
+                        .status(200)
+                        .message("Get all airlines successfully")
+                        .data(resultPaginationDTO)
+                        .build();
                 return ResponseEntity.ok(response);
         }
 
         public ResponseEntity<APIResponse<Airline>> createAirline(AirlineRequest request, MultipartFile logo)
-                        throws IOException {
+                throws IOException {
                 Airline existingAirline = airlineRepository.findByAirlineCode(request.getAirlineCode());
                 if (existingAirline != null) {
                         throw new AppException(ErrorCode.EXISTED);
                 }
                 Airline newAirline = airlineMapper.toAirline(request);
-                newAirline.setIsDeleted(false); // Đảm bảo isDeleted là false khi tạo mới
+                newAirline.setIsDeleted(false);
                 if (logo != null && !logo.isEmpty()) {
                         String logoUrl = imageUploadService.uploadImage(logo, "airline_logos");
                         newAirline.setLogo(logoUrl);
                 }
 
                 APIResponse<Airline> response = APIResponse.<Airline>builder()
-                                .data(airlineRepository.save(newAirline))
-                                .status(201)
-                                .message("Create airline successfully")
-                                .build();
+                        .data(airlineRepository.save(newAirline))
+                        .status(201)
+                        .message("Create airline successfully")
+                        .build();
                 return ResponseEntity.ok(response);
         }
 
         public ResponseEntity<APIResponse<Airline>> getAirlineById(Long id) {
                 APIResponse<Airline> response = APIResponse.<Airline>builder()
-                                .data(airlineRepository.findById(id)
-                                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)))
-                                .status(200)
-                                .message("Get airline by id successfully")
-                                .build();
+                        .data(airlineRepository.findById(id)
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)))
+                        .status(200)
+                        .message("Get airline by id successfully")
+                        .build();
                 return ResponseEntity.ok(response);
         }
 
         public ResponseEntity<APIResponse<Airline>> updateAirline(AirlineRequest request, Long id, MultipartFile logo)
-                        throws IOException {
+                throws IOException {
                 Airline existingAirline = airlineRepository.findById(id)
-                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
                 Airline updatedAirline = airlineMapper.toAirline(request);
                 updatedAirline.setId(id);
-                updatedAirline.setIsDeleted(existingAirline.getIsDeleted()); // Giữ nguyên trạng thái isDeleted
+                updatedAirline.setIsDeleted(existingAirline.getIsDeleted());
                 if (logo != null && !logo.isEmpty()) {
                         String logoUrl = imageUploadService.uploadImage(logo, "airline_logos");
                         updatedAirline.setLogo(logoUrl);
@@ -91,22 +94,66 @@ public class AirlineService {
                 }
 
                 APIResponse<Airline> response = APIResponse.<Airline>builder()
-                                .data(airlineRepository.save(updatedAirline))
-                                .status(200)
-                                .message("Update airline successfully")
-                                .build();
+                        .data(airlineRepository.save(updatedAirline))
+                        .status(200)
+                        .message("Update airline successfully")
+                        .build();
                 return ResponseEntity.ok(response);
         }
 
         public ResponseEntity<APIResponse<Void>> deleteAirline(Long id) {
                 Airline existingAirline = airlineRepository.findById(id)
-                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-                existingAirline.setIsDeleted(true); // Chuyển sang trạng thái xóa mềm
+                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                existingAirline.setIsDeleted(true);
                 airlineRepository.save(existingAirline);
                 APIResponse<Void> response = APIResponse.<Void>builder()
+                        .status(200)
+                        .message("Delete airline successfully")
+                        .build();
+                return ResponseEntity.ok(response);
+        }
+
+        public ResponseEntity<APIResponse<AirlinePopularityResponse>> getAirlinePopularity() {
+                List<Object[]> ticketCounts = airlineRepository.countTicketsByAirline();
+                long totalTickets = ticketCounts.stream()
+                        .mapToLong(row -> ((Number) row[2]).longValue())
+                        .sum();
+
+                if (totalTickets == 0) {
+                        return ResponseEntity.ok(APIResponse.<AirlinePopularityResponse>builder()
                                 .status(200)
-                                .message("Delete airline successfully")
-                                .build();
+                                .message("No tickets sold")
+                                .data(new AirlinePopularityResponse(
+                                        new AirlinePopularityResponse.AirlineInfo("None", 0.0),
+                                        new AirlinePopularityResponse.AirlineInfo("None", 0.0),
+                                        new AirlinePopularityResponse.AirlineInfo("None", 0.0)))
+                                .build());
+                }
+
+                List<AirlinePopularityResponse.AirlineInfo> airlineInfos = new ArrayList<>();
+                for (Object[] row : ticketCounts) {
+                        String airlineName = (String) row[1];
+                        long tickets = ((Number) row[2]).longValue();
+                        double percentage = (tickets * 100.0) / totalTickets;
+                        airlineInfos.add(new AirlinePopularityResponse.AirlineInfo(airlineName, percentage));
+                }
+
+                airlineInfos.sort(Comparator.comparingDouble(AirlinePopularityResponse.AirlineInfo::getPercentage).reversed());
+
+                AirlinePopularityResponse responseData = new AirlinePopularityResponse();
+                responseData.setAirline1(airlineInfos.size() > 0 ? airlineInfos.get(0) : new AirlinePopularityResponse.AirlineInfo("None", 0.0));
+                responseData.setAirline2(airlineInfos.size() > 1 ? airlineInfos.get(1) : new AirlinePopularityResponse.AirlineInfo("None", 0.0));
+
+                double otherPercentage = airlineInfos.size() > 2
+                        ? airlineInfos.subList(2, airlineInfos.size()).stream().mapToDouble(AirlinePopularityResponse.AirlineInfo::getPercentage).sum()
+                        : 0.0;
+                responseData.setOtherAirlines(new AirlinePopularityResponse.AirlineInfo("Other Airlines", otherPercentage));
+
+                APIResponse<AirlinePopularityResponse> response = APIResponse.<AirlinePopularityResponse>builder()
+                        .status(200)
+                        .message("Get airline popularity successfully")
+                        .data(responseData)
+                        .build();
                 return ResponseEntity.ok(response);
         }
 }

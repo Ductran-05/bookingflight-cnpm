@@ -8,6 +8,7 @@ import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.FlightRequest;
 import com.cnpm.bookingflight.dto.request.Flight_AirportRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
+import com.cnpm.bookingflight.dto.response.FlightCountResponse;
 import com.cnpm.bookingflight.dto.response.FlightResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
@@ -30,6 +31,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -229,6 +231,44 @@ public class FlightService {
                 APIResponse<Void> response = APIResponse.<Void>builder()
                         .status(204)
                         .message("Delete flight successfully")
+                        .build();
+                return ResponseEntity.ok(response);
+        }
+
+        public ResponseEntity<APIResponse<FlightCountResponse>> getFlightCount(String period) {
+                LocalDate currentDate = LocalDate.now();
+                int currentYear = currentDate.getYear();
+                int currentMonth = currentDate.getMonthValue();
+
+                FlightCountResponse flightCountResponse = new FlightCountResponse();
+                flightCountResponse.setPeriodType(period);
+
+                switch (period.toLowerCase()) {
+                        case "month":
+                                long currentMonthCount = flightRepository.countFlightsByMonth(currentYear, currentMonth);
+                                long previousMonthCount = flightRepository.countFlightsByMonth(
+                                        currentMonth == 1 ? currentYear - 1 : currentYear,
+                                        currentMonth == 1 ? 12 : currentMonth - 1
+                                );
+                                flightCountResponse.setCurrentPeriodCount(currentMonthCount);
+                                flightCountResponse.setPreviousPeriodCount(previousMonthCount);
+                                break;
+
+                        case "year":
+                                long currentYearCount = flightRepository.countFlightsByYear(currentYear);
+                                long previousYearCount = flightRepository.countFlightsByYear(currentYear - 1);
+                                flightCountResponse.setCurrentPeriodCount(currentYearCount);
+                                flightCountResponse.setPreviousPeriodCount(previousYearCount);
+                                break;
+
+                        default:
+                                throw new AppException(ErrorCode.INVALID_PERIOD_TYPE);
+                }
+
+                APIResponse<FlightCountResponse> response = APIResponse.<FlightCountResponse>builder()
+                        .status(200)
+                        .message("Get flight count successfully")
+                        .data(flightCountResponse)
                         .build();
                 return ResponseEntity.ok(response);
         }
