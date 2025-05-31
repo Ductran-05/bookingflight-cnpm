@@ -5,6 +5,7 @@ import com.cnpm.bookingflight.repository.PageRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
@@ -20,37 +21,35 @@ public class PermissionInitializer {
     private final PageRepository pageRepository;
 
     // Danh sách các URL không cần phân quyền (bỏ qua)
-    private static final List<String> WHITE_LIST_PREFIXES = List.of(
-            "/auth", "/error");
+    private static final List<String> WHITE_LIST_PATTERNS = List.of(
+            "/auth/**", "/error", "/pages/**");
+
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     @PostConstruct
     public void initializePages() {
-        // Lấy toàn bộ endpoint trong ứng dụng (RequestMappingInfo)
         Map<RequestMappingInfo, HandlerMethod> handlerMethods = handlerMapping.getHandlerMethods();
 
         for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : handlerMethods.entrySet()) {
             RequestMappingInfo mappingInfo = entry.getKey();
 
-            // Hỗ trợ Spring Boot 2 và 3
             Set<String> urlPatterns = resolvePatterns(mappingInfo);
             Set<RequestMethod> methods = mappingInfo.getMethodsCondition().getMethods();
 
-            for (String url : urlPatterns) {
-                // if (isWhiteListed(url))
-                // continue;
+            for (String rawUrl : urlPatterns) {
+                String url = normalizePath(rawUrl);
+                if (isWhiteListed(url))
+                    continue;
 
                 for (RequestMethod method : methods) {
-                    // Kiểm tra đã tồn tại page tương ứng chưa
                     boolean exists = pageRepository.existsByApiPathAndMethod(url, method.name());
                     if (!exists) {
-                        // Tạo mới bản ghi Page
                         Page page = Page.builder()
                                 .apiPath(url)
                                 .method(method.name())
                                 .name(generateName(url, method.name()))
                                 .module(extractModule(url))
                                 .build();
-
                         pageRepository.save(page);
                     }
                 }
@@ -58,7 +57,6 @@ public class PermissionInitializer {
         }
     }
 
-    // Trích xuất tất cả pattern URL từ RequestMappingInfo (Spring Boot 2 & 3)
     private Set<String> resolvePatterns(RequestMappingInfo info) {
         Set<String> patterns = new HashSet<>();
         if (info.getPatternsCondition() != null) {
@@ -70,17 +68,19 @@ public class PermissionInitializer {
         return patterns;
     }
 
-    // Kiểm tra xem URL có thuộc white list không
-    private boolean isWhiteListed(String path) {
-        return WHITE_LIST_PREFIXES.stream().anyMatch(path::startsWith);
+    private String normalizePath(String path) {
+        return path.replaceAll("\\{[^/]+}", "**");
     }
 
-    // Tạo tên hiển thị cho page (ví dụ: "GET /api/v1/flights")
+    // Kiểm tra xem URL có thuộc white list không, hỗ trợ ** bằng AntPathMatcher
+    private boolean isWhiteListed(String path) {
+        return WHITE_LIST_PATTERNS.stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
+    }
+
     private String generateName(String path, String method) {
         return method + " " + path;
     }
 
-    // Trích module từ URL path (ví dụ: "/api/v1/flights" -> "Flights")
     private String extractModule(String path) {
         String[] parts = path.split("/");
         for (String part : parts) {
@@ -91,7 +91,6 @@ public class PermissionInitializer {
         return "General";
     }
 
-    // Viết hoa chữ cái đầu (Flights, Users, Tickets...)
     private String capitalize(String s) {
         if (s == null || s.isEmpty())
             return s;
