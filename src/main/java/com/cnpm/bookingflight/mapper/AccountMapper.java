@@ -19,6 +19,7 @@ import lombok.experimental.FieldDefaults;
 @Component
 public class AccountMapper {
     final RoleRepository roleRepository;
+    final RoleMapper roleMapper;
 
     public Account toAccount(AccountRequest request) {
         Role role = roleRepository.findById(request.getRoleId())
@@ -40,7 +41,7 @@ public class AccountMapper {
                 .fullName(account.getFullName())
                 .phone(account.getPhone())
                 .avatar(account.getAvatar())
-                .role(account.getRole())
+                .role(roleMapper.toRoleResponse(account.getRole()))
                 .build();
     }
 }

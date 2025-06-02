@@ -30,6 +30,7 @@ import com.cnpm.bookingflight.dto.request.LoginDTO;
 import com.cnpm.bookingflight.dto.request.RegisterRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.AccountResponse;
+import com.cnpm.bookingflight.dto.response.LoginResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.mapper.AccountMapper;
@@ -57,7 +58,7 @@ public class AuthController {
         final SecurityConfig securityConfig;
 
         @PostMapping("/login")
-        public ResponseEntity<APIResponse<String>> login(@Valid @RequestBody LoginDTO loginDTO) {
+        public ResponseEntity<APIResponse<LoginResponse>> login(@Valid @RequestBody LoginDTO loginDTO) {
                 // Nạp input gồm username/password vào Security
                 UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                                 loginDTO.getUsername(), loginDTO.getPassword());
@@ -85,11 +86,14 @@ public class AuthController {
                                 .path("/")
                                 .maxAge(securityConfig.getRefreshTokenExpiration())
                                 .build();
-
-                APIResponse<String> response = APIResponse.<String>builder()
+                LoginResponse loginResponse = LoginResponse.builder()
+                                .accessToken(accessToken)
+                                .account(currAccountResponse)
+                                .build();
+                APIResponse<LoginResponse> response = APIResponse.<LoginResponse>builder()
                                 .status(200)
                                 .message("Login successfully")
-                                .data(accessToken)
+                                .data(loginResponse)
                                 .build();
                 return ResponseEntity.ok()
                                 .header("Set-Cookie", responseCookie.toString())
@@ -116,7 +120,7 @@ public class AuthController {
 
         // lay nguoi dung da dang nhap tu cookie
         @GetMapping("/refresh")
-        public ResponseEntity<APIResponse<String>> refreshToken(
+        public ResponseEntity<APIResponse<LoginResponse>> refreshToken(
                         @CookieValue(name = "refreshToken", defaultValue = "") String refreshToken) {
                 // check valid refresh token
                 Jwt decodedTokenJwt = securityUtil.checkValidRefreshToken(refreshToken);
@@ -137,11 +141,15 @@ public class AuthController {
                                 .path("/")
                                 .maxAge(securityConfig.getRefreshTokenExpiration())
                                 .build();
+                LoginResponse loginResponse = LoginResponse.builder()
+                                .accessToken(newAccessToken)
+                                .account(currAccountResponse)
+                                .build();
                 // response data
-                APIResponse<String> response = APIResponse.<String>builder()
+                APIResponse<LoginResponse> response = APIResponse.<LoginResponse>builder()
                                 .status(200)
                                 .message("Refresh token successfully")
-                                .data(newAccessToken)
+                                .data(loginResponse)
                                 .build();
                 return ResponseEntity.ok()
                                 .header("Set-Cookie", responseCookie.toString())

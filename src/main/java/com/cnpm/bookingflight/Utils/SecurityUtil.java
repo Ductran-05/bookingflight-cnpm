@@ -43,7 +43,6 @@ public class SecurityUtil {
              .issuedAt(now)
              .expiresAt(validity)
              .subject(username)
-             .claim("account", accountResponse)
              .claim("token_type", "access")
              .build();
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();
@@ -58,7 +57,6 @@ public class SecurityUtil {
             .issuedAt(now)
             .expiresAt(validity)
             .subject(username)
-            .claim("account", accountResponse)
             .claim("token_type", "refresh")
             .build();
         JwsHeader jwsHeader = JwsHeader.with(JWT_ALGORITHM).build();

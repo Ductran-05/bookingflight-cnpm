@@ -85,7 +85,6 @@ public class AppInitializer {
         });
         // gán pages cho role admin
         for (Page page : pageRepository.findAll()) {
-            System.out.println(">>> page= " + page);
             Page_Role page_Role = Page_Role.builder()
                     .id(new Page_RoleId(page.getId(), adminRole.getId()))
                     .page(page)

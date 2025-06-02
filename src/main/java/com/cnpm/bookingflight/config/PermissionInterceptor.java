@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.servlet.HandlerInterceptor;
-import org.springframework.web.servlet.HandlerMapping;
 
 import com.cnpm.bookingflight.Utils.SecurityUtil;
 import com.cnpm.bookingflight.domain.Account;

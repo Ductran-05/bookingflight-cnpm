@@ -21,5 +21,5 @@ public class AccountResponse {
     String fullName;
     String phone;
     String avatar;
-    Role role;
+    RoleResponse role;
 }
