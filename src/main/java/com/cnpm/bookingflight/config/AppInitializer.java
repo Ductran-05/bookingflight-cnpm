@@ -151,7 +151,17 @@ public class AppInitializer {
     }
 
     private String normalizePath(String path) {
-        return path.replaceAll("\\{[^/]+}", "**");
+        // Thay {id}, {abc}... bằng **
+        path = path.replaceAll("\\{[^/]+}", "**");
+
+        // Nếu path không kết thúc bằng '/**' và không có phần mở rộng sau tiền tố (ví
+        // dụ: /accounts), thêm '/**'
+        if (!path.endsWith("/**")) {
+            path = path.replaceAll("/$", ""); // xóa dấu "/" cuối nếu có
+            path += "/**";
+        }
+
+        return path;
     }
 
     private boolean isWhiteListed(String path) {

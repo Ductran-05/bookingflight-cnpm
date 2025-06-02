@@ -34,42 +34,57 @@ public class PermissionInterceptor implements HandlerInterceptor {
             HttpServletResponse response, Object handler)
             throws Exception {
 
-        String path = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
         String requestURI = request.getRequestURI();
         String httpMethod = request.getMethod();
+
         System.out.println(">>> RUN preHandle");
-        System.out.println(">>> path= " + path);
-        System.out.println(">>> httpMethod= " + httpMethod);
-        System.out.println(">>> requestURI= " + requestURI);
-        // check permission
+        System.out.println(">>> httpMethod = " + httpMethod);
+        System.out.println(">>> requestURI = " + requestURI);
+
         String username = SecurityUtil.getCurrentUserLogin().orElse("");
         if (!username.isEmpty()) {
             Account account = accountRepository.findByUsername(username).orElse(null);
-            if (account.getRole() == null) {
+
+            if (account == null || account.getRole() == null) {
                 throw new AppException(ErrorCode.ROLE_NOT_FOUND);
             }
-            if (account.getRole().getRoleName().equals("ADMIN")) {
+
+            if ("ADMIN".equals(account.getRole().getRoleName())) {
                 return true;
             }
-            if (account != null) {
-                Role role = account.getRole();
-                if (role != null) {
-                    List<Page> pages = page_RoleRepository.findAllByRole(role).stream()
-                            .map(page_Role -> page_Role.getPage())
-                            .toList();
-                    AntPathMatcher matcher = new AntPathMatcher();
-                    if (pages != null) {
-                        for (Page page : pages) {
-                            if (page.getMethod().equalsIgnoreCase(httpMethod) &&
-                                    matcher.match(page.getApiPath(), requestURI)) {
-                                return true;
-                            }
-                        }
-                        throw new AppException(ErrorCode.UNAUTHORIZED);
-                    }
+
+            Role role = account.getRole();
+            List<Page> pages = page_RoleRepository.findAllByRole(role).stream()
+                    .map(page_Role -> page_Role.getPage())
+                    .toList();
+
+            AntPathMatcher matcher = new AntPathMatcher();
+            String normalizedRequestURI = normalizePath(requestURI);
+
+            for (Page page : pages) {
+                String normalizedApiPath = normalizePath(page.getApiPath());
+                if (page.getMethod().equalsIgnoreCase(httpMethod) &&
+                        matcher.match(normalizedApiPath, normalizedRequestURI)) {
+                    return true;
                 }
             }
+
+            throw new AppException(ErrorCode.UNAUTHORIZED);
         }
+
         return true;
+    }
+
+    private String normalizePath(String path) {
+        // Thay {id} hoặc tương tự thành **
+        path = path.replaceAll("\\{[^/]+}", "**");
+
+        // Nếu không kết thúc bằng /** và không chứa wildcard thì thêm /** để gom nhóm
+        if (!path.endsWith("/**") && !path.contains("*")) {
+            path = path.replaceAll("/$", ""); // xóa dấu / cuối nếu có
+            path += "/**";
+        }
+
+        return path;
     }
 }
