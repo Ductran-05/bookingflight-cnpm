@@ -117,7 +117,7 @@ public class AppInitializer {
         });
 
         // Lấy danh sách các API cho phép user access (ví dụ GET các API public)
-        List<String> allowedPaths = List.of("/flights/**", "/tickets/**");
+        List<String> allowedPaths = List.of("/my-account/**", "/tickets/**");
 
         List<Page> allowedPagesForUser = pageRepository.findAll().stream()
                 .filter(page -> page.getMethod().equalsIgnoreCase("GET") &&

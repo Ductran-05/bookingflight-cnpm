@@ -101,7 +101,7 @@ public class AuthController {
         }
 
         // lay nguoi dung da dang nhap
-        @GetMapping("/user")
+        @GetMapping("/my-account")
         public ResponseEntity<APIResponse<AccountResponse>> getUserLogin() {
                 String username = SecurityUtil.getCurrentUserLogin().isPresent()
                                 ? SecurityUtil.getCurrentUserLogin().get()
