@@ -58,7 +58,6 @@ public class AppInitializer {
                 String url = normalizePath(rawUrl);
                 if (isWhiteListed(url))
                     continue;
-
                 for (RequestMethod method : methods) {
                     boolean exists = pageRepository.existsByApiPathAndMethod(url, method.name());
                     if (!exists) {

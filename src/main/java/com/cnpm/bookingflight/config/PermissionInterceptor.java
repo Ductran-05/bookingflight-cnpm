@@ -40,6 +40,18 @@ public class PermissionInterceptor implements HandlerInterceptor {
         System.out.println(">>> httpMethod = " + httpMethod);
         System.out.println(">>> requestURI = " + requestURI);
 
+        // Danh sách public GET
+        if (httpMethod.equals("GET") && (requestURI.startsWith("/airports") ||
+                requestURI.startsWith("/cities") ||
+                requestURI.startsWith("/airlines") ||
+                requestURI.startsWith("/flights") ||
+                requestURI.startsWith("/seats") ||
+                requestURI.startsWith("/planes") ||
+                requestURI.startsWith("/tickets/booking-rate") ||
+                requestURI.startsWith("/airlines/flights/airline-popular"))) {
+            return true;
+        }
+
         String username = SecurityUtil.getCurrentUserLogin().orElse("");
         if (!username.isEmpty()) {
             Account account = accountRepository.findByUsername(username).orElse(null);
@@ -68,7 +80,7 @@ public class PermissionInterceptor implements HandlerInterceptor {
                 }
             }
 
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new AppException(ErrorCode.FORBIDDEN);
         }
 
         return true;

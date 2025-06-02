@@ -6,6 +6,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -46,6 +47,16 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/", "/auth/confirm", "/auth/login", "/auth/register", "/auth/refresh")
                         .permitAll() // Đảm bảo
+                        .requestMatchers(HttpMethod.GET,
+                                "/airports/**",
+                                "/cities/**",
+                                "/airlines/**",
+                                "/flights/**",
+                                "/planes/**",
+                                "/seats/**",
+                                "/tickets/booking-rate/**",
+                                "/airlines/flights/airline-popular/**")
+                        .permitAll()
                         // /login
                         .anyRequest().authenticated()) // Các route khác yêu cầu xác thực
                 // .anyRequest().permitAll()) // Tạm thời cho phép tất cả các route để kiểm tra
