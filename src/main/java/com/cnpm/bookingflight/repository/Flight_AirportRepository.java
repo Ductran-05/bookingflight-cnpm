@@ -13,4 +13,6 @@ public interface Flight_AirportRepository extends JpaRepository<Flight_Airport, 
     List<Flight_Airport> findByIdFlightId(Long flightId);
 
     void deleteByIdFlightId(Long id);
+
+    boolean existsByAirportId(Long id);
 }

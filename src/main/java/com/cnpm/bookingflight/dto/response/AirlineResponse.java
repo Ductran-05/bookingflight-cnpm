@@ -12,10 +12,10 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class AirportResponse {
+public class AirlineResponse {
     Long id;
-    String airportCode;
-    String airportName;
-    String cityName;
+    String airlineCode;
+    String airlineName;
+    String logo;
     Boolean canDelete;
 }

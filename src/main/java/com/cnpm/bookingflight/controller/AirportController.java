@@ -1,27 +1,19 @@
 package com.cnpm.bookingflight.controller;
 
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.cnpm.bookingflight.domain.Airport;
 import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.AirportRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
+import com.cnpm.bookingflight.dto.response.AirportResponse;
 import com.cnpm.bookingflight.service.AirportService;
 import com.turkraft.springfilter.boot.Filter;
-
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/airports")
@@ -37,12 +29,12 @@ public class AirportController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<APIResponse<Airport>> getAirport(@PathVariable("id") Long id) {
+    public ResponseEntity<APIResponse<AirportResponse>> getAirport(@PathVariable("id") Long id) {
         return airportService.getAirportById(id);
     }
 
     @PostMapping
-    public ResponseEntity<APIResponse<Airport>> createAirport(@RequestBody AirportRequest request) {
+    public ResponseEntity<APIResponse<AirportResponse>> createAirport(@RequestBody AirportRequest request) {
         return airportService.createAirport(request);
     }
 
@@ -52,9 +44,8 @@ public class AirportController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<APIResponse<Airport>> updateAirport(@PathVariable("id") Long id,
-            @RequestBody AirportRequest request) {
+    public ResponseEntity<APIResponse<AirportResponse>> updateAirport(@PathVariable("id") Long id,
+                                                                      @RequestBody AirportRequest request) {
         return airportService.updateAirport(id, request);
     }
-
 }
