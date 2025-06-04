@@ -1,15 +1,14 @@
 package com.cnpm.bookingflight.dto.response;
 
-import java.util.List;
-
 import com.cnpm.bookingflight.domain.Page;
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -21,4 +20,5 @@ public class RoleResponse {
     String roleName;
     String roleDescription;
     List<Page> pages;
+    Boolean canDelete;
 }
