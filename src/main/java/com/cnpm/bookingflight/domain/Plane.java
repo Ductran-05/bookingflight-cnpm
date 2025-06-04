@@ -35,4 +35,5 @@ public class Plane {
     @ManyToOne
     @JoinColumn(name = "airlineId")
     Airline airline;
+
 }
