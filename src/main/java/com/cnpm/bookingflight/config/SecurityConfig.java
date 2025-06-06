@@ -45,17 +45,9 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/", "/auth/confirm", "/auth/login", "/auth/register", "/auth/refresh")
-                        .permitAll() // Đảm bảo
-                        .requestMatchers(HttpMethod.GET,
-                                "/airports/**",
-                                "/cities/**",
-                                "/airlines/**",
-                                "/flights/**",
-                                "/planes/**",
-                                "/seats/**",
-                                "/tickets/booking-rate/**",
-                                "/airlines/flights/airline-popular/**")
+                        .requestMatchers(PublicEndpoints.ALL_METHODS.toArray(new String[0]))
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, PublicEndpoints.GET_METHODS.toArray(new String[0]))
                         .permitAll()
                         // /login
                         .anyRequest().authenticated()) // Các route khác yêu cầu xác thực
