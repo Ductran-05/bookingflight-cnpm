@@ -1,11 +1,10 @@
 package com.cnpm.bookingflight.repository;
 
+import com.cnpm.bookingflight.domain.Airline;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-
-import com.cnpm.bookingflight.domain.Airline;
 
 import java.util.List;
 
@@ -21,4 +20,5 @@ public interface AirlineRepository extends JpaRepository<Airline, Long>, JpaSpec
             "LEFT JOIN Ticket t ON t.flight.id = f.id " +
             "WHERE a.isDeleted = false " +
             "GROUP BY a.id, a.airlineName")
-    List<Object[]> countTicketsByAirline();}
+    List<Object[]> countTicketsByAirline();
+}

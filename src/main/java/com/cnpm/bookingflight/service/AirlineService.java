@@ -5,6 +5,7 @@ import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.AirlineRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.AirlinePopularityResponse;
+import com.cnpm.bookingflight.dto.response.AirlineResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.mapper.AirlineMapper;
@@ -37,7 +38,7 @@ public class AirlineService {
         public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllAirlines(Specification<Airline> spec,
                                                                                Pageable pageable) {
                 spec = spec.and((root, query, cb) -> cb.equal(root.get("isDeleted"), false));
-                Page<Airline> page = airlineRepository.findAll(spec, pageable);
+                Page<AirlineResponse> page = airlineRepository.findAll(spec, pageable).map(airlineMapper::toAirlineResponse);
                 ResultPaginationDTO resultPaginationDTO = resultPaginationMapper.toResultPagination(page);
                 APIResponse<ResultPaginationDTO> response = APIResponse.<ResultPaginationDTO>builder()
                         .status(200)
@@ -47,7 +48,7 @@ public class AirlineService {
                 return ResponseEntity.ok(response);
         }
 
-        public ResponseEntity<APIResponse<Airline>> createAirline(AirlineRequest request, MultipartFile logo)
+        public ResponseEntity<APIResponse<AirlineResponse>> createAirline(AirlineRequest request, MultipartFile logo)
                 throws IOException {
                 Airline existingAirline = airlineRepository.findByAirlineCode(request.getAirlineCode());
                 if (existingAirline != null) {
@@ -60,25 +61,26 @@ public class AirlineService {
                         newAirline.setLogo(logoUrl);
                 }
 
-                APIResponse<Airline> response = APIResponse.<Airline>builder()
-                        .data(airlineRepository.save(newAirline))
+                APIResponse<AirlineResponse> response = APIResponse.<AirlineResponse>builder()
+                        .data(airlineMapper.toAirlineResponse(airlineRepository.save(newAirline)))
                         .status(201)
                         .message("Create airline successfully")
                         .build();
                 return ResponseEntity.ok(response);
         }
 
-        public ResponseEntity<APIResponse<Airline>> getAirlineById(Long id) {
-                APIResponse<Airline> response = APIResponse.<Airline>builder()
-                        .data(airlineRepository.findById(id)
-                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)))
+        public ResponseEntity<APIResponse<AirlineResponse>> getAirlineById(Long id) {
+                Airline airline = airlineRepository.findById(id)
+                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                APIResponse<AirlineResponse> response = APIResponse.<AirlineResponse>builder()
+                        .data(airlineMapper.toAirlineResponse(airline))
                         .status(200)
                         .message("Get airline by id successfully")
                         .build();
                 return ResponseEntity.ok(response);
         }
 
-        public ResponseEntity<APIResponse<Airline>> updateAirline(AirlineRequest request, Long id, MultipartFile logo)
+        public ResponseEntity<APIResponse<AirlineResponse>> updateAirline(AirlineRequest request, Long id, MultipartFile logo)
                 throws IOException {
                 Airline existingAirline = airlineRepository.findById(id)
                         .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
@@ -93,8 +95,8 @@ public class AirlineService {
                         updatedAirline.setLogo(existingAirline.getLogo());
                 }
 
-                APIResponse<Airline> response = APIResponse.<Airline>builder()
-                        .data(airlineRepository.save(updatedAirline))
+                APIResponse<AirlineResponse> response = APIResponse.<AirlineResponse>builder()
+                        .data(airlineMapper.toAirlineResponse(airlineRepository.save(updatedAirline)))
                         .status(200)
                         .message("Update airline successfully")
                         .build();

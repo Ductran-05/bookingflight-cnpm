@@ -8,5 +8,6 @@ import com.cnpm.bookingflight.domain.Plane;
 
 @Repository
 public interface PlaneRepository extends JpaRepository<Plane, Long>, JpaSpecificationExecutor<Plane> {
+    boolean existsByAirlineId(Long airlineId);
     Plane findByPlaneCode(String planeCode);
 }

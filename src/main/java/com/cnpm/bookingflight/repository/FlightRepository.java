@@ -19,4 +19,8 @@ public interface FlightRepository extends JpaRepository<Flight, Long>, JpaSpecif
             "FROM Flight f " +
             "WHERE YEAR(f.departureDate) = :year")
     long countFlightsByYear(int year);
+
+    boolean existsByDepartureAirportIdOrArrivalAirportId(Long departureAirportId, Long arrivalAirportId);
+
+    boolean existsByPlaneId(Long planeId);
 }

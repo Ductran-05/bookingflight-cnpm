@@ -5,11 +5,10 @@ import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.AirlineRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.AirlinePopularityResponse;
+import com.cnpm.bookingflight.dto.response.AirlineResponse;
 import com.cnpm.bookingflight.service.AirlineService;
 import com.turkraft.springfilter.boot.Filter;
 import lombok.AccessLevel;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Pageable;
@@ -22,7 +21,6 @@ import java.io.IOException;
 
 @RequestMapping("/airlines")
 @RestController
-@Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
 public class AirlineController {
@@ -31,25 +29,25 @@ public class AirlineController {
 
     @GetMapping
     public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllAirlines(@Filter Specification<Airline> spec,
-            Pageable pageable) {
+                                                                           Pageable pageable) {
         return airlineService.getAllAirlines(spec, pageable);
     }
 
     @PostMapping(consumes = { "multipart/form-data" })
-    public ResponseEntity<APIResponse<Airline>> createAirline(@RequestPart("airline") AirlineRequest request,
-            @RequestPart(value = "logo", required = false) MultipartFile logo) throws IOException {
+    public ResponseEntity<APIResponse<AirlineResponse>> createAirline(@RequestPart("airline") AirlineRequest request,
+                                                                      @RequestPart(value = "logo", required = false) MultipartFile logo) throws IOException {
         return airlineService.createAirline(request, logo);
     }
 
     @PutMapping(value = "/{id}", consumes = { "multipart/form-data" })
-    public ResponseEntity<APIResponse<Airline>> updateAirline(@PathVariable("id") Long id,
-            @RequestPart("airline") AirlineRequest request,
-            @RequestPart(value = "logo", required = false) MultipartFile logo) throws IOException {
+    public ResponseEntity<APIResponse<AirlineResponse>> updateAirline(@PathVariable("id") Long id,
+                                                                      @RequestPart("airline") AirlineRequest request,
+                                                                      @RequestPart(value = "logo", required = false) MultipartFile logo) throws IOException {
         return airlineService.updateAirline(request, id, logo);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<APIResponse<Airline>> getAirlineById(@PathVariable("id") Long id) {
+    public ResponseEntity<APIResponse<AirlineResponse>> getAirlineById(@PathVariable("id") Long id) {
         return airlineService.getAirlineById(id);
     }
 

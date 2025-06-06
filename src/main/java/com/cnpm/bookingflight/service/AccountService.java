@@ -15,12 +15,10 @@ import com.cnpm.bookingflight.mapper.ResultPaginationMapper;
 import com.cnpm.bookingflight.repository.AccountRepository;
 import com.cnpm.bookingflight.repository.RoleRepository;
 import com.cnpm.bookingflight.repository.VerificationTokenRepository;
-
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -39,9 +37,7 @@ import java.util.UUID;
 public class AccountService {
 
     private final EmailService emailService;
-
     private final VerificationTokenRepository verificationTokenRepository;
-
     final PasswordEncoder passwordEncoder;
     final AccountRepository accountRepository;
     final AccountMapper accountMapper;
@@ -50,7 +46,7 @@ public class AccountService {
     final RoleRepository roleRepository;
 
     public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllAccounts(Specification<Account> spec,
-            Pageable pageable) {
+                                                                           Pageable pageable) {
         spec = spec.and((root, query, cb) -> cb.equal(root.get("isDeleted"), false));
         Page<AccountResponse> page = accountRepository.findAll(spec, pageable).map(accountMapper::toAccountResponse);
         ResultPaginationDTO resultPaginationDTO = resultPaginationMapper.toResultPagination(page);
@@ -81,7 +77,7 @@ public class AccountService {
 
         Account newAccount = accountMapper.toAccount(request);
         newAccount.setEnabled(true);
-        newAccount.setIsDeleted(false); // Đảm bảo isDeleted là false khi tạo mới
+        newAccount.setIsDeleted(false);
         if (avatar != null && !avatar.isEmpty()) {
             String avatarUrl = imageUploadService.uploadImage(avatar, "avatars");
             newAccount.setAvatar(avatarUrl);
@@ -96,20 +92,14 @@ public class AccountService {
     }
 
     public ResponseEntity<APIResponse<AccountResponse>> updateAccount(Long id, AccountRequest request,
-            MultipartFile avatar)
-            throws IOException {
+                                                                      MultipartFile avatar) throws IOException {
         Account existingAccount = accountRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
-        Account updatedAccount = accountMapper.toAccount(request);
-        updatedAccount.setId(id);
-        updatedAccount.setPassword(existingAccount.getPassword()); // Giữ nguyên password
-        updatedAccount.setIsDeleted(existingAccount.getIsDeleted()); // Giữ nguyên trạng thái isDeleted
+        Account updatedAccount = accountMapper.updateAccount(request, existingAccount);
         if (avatar != null && !avatar.isEmpty()) {
             String avatarUrl = imageUploadService.uploadImage(avatar, "avatars");
             updatedAccount.setAvatar(avatarUrl);
-        } else {
-            updatedAccount.setAvatar(existingAccount.getAvatar());
         }
 
         APIResponse<AccountResponse> response = APIResponse.<AccountResponse>builder()
@@ -120,12 +110,11 @@ public class AccountService {
         return ResponseEntity.ok(response);
     }
 
-    // xóa mềm account
     @Transactional
     public ResponseEntity<APIResponse<Void>> deleteAccount(Long id) {
         Account existingAccount = accountRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        existingAccount.setIsDeleted(true); // Chuyển sang trạng thái xóa mềm
+        existingAccount.setIsDeleted(true);
         accountRepository.save(existingAccount);
         APIResponse<Void> response = APIResponse.<Void>builder()
                 .status(200)
@@ -134,7 +123,6 @@ public class AccountService {
         return ResponseEntity.ok(response);
     }
 
-    // xóa cứng account
     @Transactional
     public ResponseEntity<APIResponse<Void>> hardDeleteAccount(Long id) {
         accountRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
@@ -166,40 +154,35 @@ public class AccountService {
     }
 
     public ResponseEntity<APIResponse<AccountResponse>> registerUser(RegisterRequest request) {
-        // Kiểm tra email đã được tạo và còn tồn tại trên hệ thống chưa
         Account existingAccount = accountRepository.findByUsernameAndIsDeletedFalse(request.getUsername()).orElse(null);
         if (existingAccount != null) {
-            if (existingAccount.getEnabled() == false) {
-                // Xóa mềm account
+            if (!existingAccount.getEnabled()) {
                 hardDeleteAccount(existingAccount.getId());
             } else {
                 throw new AppException(ErrorCode.EXISTED);
             }
         }
-        // Tạo account chờ kích hoạt
+
         Account account = Account.builder()
                 .fullName(request.getFullName())
                 .phone(request.getPhone())
                 .avatar(request.getAvatar())
                 .username(request.getUsername())
-                .password(request.getPassword())
-                .isDeleted(false) // Đảm bảo isDeleted là false khi đăng ký
+                .password(passwordEncoder.encode(request.getPassword()))
+                .isDeleted(false)
                 .role(roleRepository.findByRoleName("USER").orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)))
                 .build();
         accountRepository.save(account);
 
-        // Tạo token
         String token = UUID.randomUUID().toString();
         VerificationToken verificationToken = VerificationToken.builder()
                 .token(token)
                 .account(account)
-                .expiryDate(LocalDateTime.now().plusDays(01))
+                .expiryDate(LocalDateTime.now().plusDays(1))
                 .build();
         verificationTokenRepository.save(verificationToken);
 
-        // Gửi mail
         String link = "http://localhost:8080/auth/confirm?token=" + token;
-        System.out.println(link);
         emailService.send(account.getUsername(), buildEmail(link));
 
         APIResponse<AccountResponse> response = APIResponse.<AccountResponse>builder()
@@ -211,11 +194,11 @@ public class AccountService {
     }
 
     private String buildEmail(String link) {
-        return "Chào bạn,\n\n"
-                + "Cảm ơn bạn đã đăng ký tài khoản. Vui lòng nhấn vào liên kết dưới đây để xác thực email:\n"
-                + link + "\n\n"
-                + "Liên kết này sẽ hết hạn sau 24 giờ.\n\n"
-                + "Trân trọng.";
+        return "Chào bạn,\n\n" +
+                "Cảm ơn bạn đã đăng ký tài khoản. Vui lòng nhấn vào liên kết dưới đây để xác thực email:\n" +
+                link + "\n\n" +
+                "Liên kết này sẽ hết hạn sau 24 giờ.\n\n" +
+                "Trân trọng.";
     }
 
     public void updateAccountRefreshToken(String refreshToken, String username) {

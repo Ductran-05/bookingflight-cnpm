@@ -1,16 +1,16 @@
 package com.cnpm.bookingflight.repository;
 
-import java.util.List;
-
+import com.cnpm.bookingflight.domain.Flight_Seat;
+import com.cnpm.bookingflight.domain.id.Flight_SeatId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.cnpm.bookingflight.domain.Flight_Seat;
-import com.cnpm.bookingflight.domain.id.Flight_SeatId;
+import java.util.List;
 
 @Repository
 public interface Flight_SeatRepository extends JpaRepository<Flight_Seat, Flight_SeatId> {
-    List<Flight_Seat> findByIdFlightId(Long flightId);
+    void deleteByIdFlightId(Long flightId);
+    boolean existsBySeatId(Long seatId);
 
-    void deleteByIdFlightId(Long id);
+    List<Flight_Seat> findByIdFlightId(Long id);
 }

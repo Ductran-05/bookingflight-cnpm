@@ -12,11 +12,11 @@ import com.cnpm.bookingflight.domain.id.Page_RoleId;
 
 @Repository
 public interface Page_RoleRepository extends JpaRepository<Page_Role, Page_RoleId> {
-
     List<Page_Role> findAllByRole(Role role);
 
     void deleteAllByRole(Role role);
 
     boolean existsByPageAndRole(Page page, Role adminRole);
 
+    boolean existsByRoleId(Long roleId);
 }

@@ -22,4 +22,6 @@ public interface AccountRepository extends JpaRepository<Account, Long>, JpaSpec
     Optional<Account> findByUsernameAndIsDeletedFalse(String username);
 
     boolean existsByRole(Role role);
+    boolean existsByRoleId(Long roleId);
+
 }
