@@ -1,5 +1,6 @@
 package com.cnpm.bookingflight.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,5 +15,7 @@ public interface PageRepository extends JpaRepository<Page, Long>, JpaSpecificat
     Optional<Page> findByName(String name);
 
     boolean existsByApiPathAndMethod(String pattern, String name);
+
+    List<Page> findByMethodAndApiPath(String method, String apiPath);
 
 }
