@@ -21,6 +21,18 @@ public class ParametersService {
     final ParametersRepository parametersRepository;
     final ParametersMapper parametersMapper;
 
+    public ResponseEntity<APIResponse<Parameters>> getParameters() {
+        Parameters parameters = parametersRepository.findById(1L)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+
+        APIResponse<Parameters> response = APIResponse.<Parameters>builder()
+                .status(200)
+                .message("Get parameters successfully")
+                .data(parameters)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
     public ResponseEntity<APIResponse<Parameters>> updateParameters(ParametersRequest request) {
         Parameters existingParameters = parametersRepository.findById(1L)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
