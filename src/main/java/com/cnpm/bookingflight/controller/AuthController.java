@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import com.cnpm.bookingflight.dto.request.UpdateProfileRequest;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -12,14 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.web.bind.annotation.CookieValue;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.cnpm.bookingflight.Utils.SecurityUtil;
@@ -211,4 +205,12 @@ public class AuthController {
                 return "Email confirmed. Account activated.";
         }
 
+        @PutMapping(value = "/profile", consumes = { "multipart/form-data" })
+        public ResponseEntity<APIResponse<AccountResponse>> updateProfile(
+                @RequestPart("profile") UpdateProfileRequest request,
+                @RequestPart(value = "avatar", required = false) MultipartFile avatar) throws IOException {
+                String username = SecurityUtil.getCurrentUserLogin()
+                        .orElseThrow(() -> new AppException(ErrorCode.UNAUTHORIZED));
+                return accountService.updateProfile(username, request, avatar);
+        }
 }
