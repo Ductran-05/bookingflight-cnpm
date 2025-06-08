@@ -35,21 +35,13 @@ public class PermissionInterceptor implements HandlerInterceptor {
 
         String requestURI = request.getRequestURI();
         String httpMethod = request.getMethod();
-
-        System.out.println(">>> RUN preHandle");
-        System.out.println(">>> httpMethod = " + httpMethod);
-        System.out.println(">>> requestURI = " + requestURI);
+        String normalizedPath = normalizePath(requestURI);
 
         // Danh sách public GET
-        if (httpMethod.equals("GET") && (requestURI.startsWith("/airports") ||
-                requestURI.startsWith("/cities") ||
-                requestURI.startsWith("/airlines") ||
-                requestURI.startsWith("/flights") ||
-                requestURI.startsWith("/seats") ||
-                requestURI.startsWith("/planes") ||
-                requestURI.startsWith("/tickets/booking-rate") ||
-                requestURI.startsWith("/airlines/flights/airline-popular"))) {
-            return true;
+        if (httpMethod.equals("GET")) {
+            if (PublicEndpoints.GET_METHODS.contains(normalizedPath)) {
+                return true;
+            }
         }
 
         String username = SecurityUtil.getCurrentUserLogin().orElse("");
@@ -87,15 +79,39 @@ public class PermissionInterceptor implements HandlerInterceptor {
     }
 
     private String normalizePath(String path) {
-        // Thay {id} hoặc tương tự thành **
-        path = path.replaceAll("\\{[^/]+}", "**");
-
-        // Nếu không kết thúc bằng /** và không chứa wildcard thì thêm /** để gom nhóm
-        if (!path.endsWith("/**") && !path.contains("*")) {
-            path = path.replaceAll("/$", ""); // xóa dấu / cuối nếu có
-            path += "/**";
+        if (path == null || path.isEmpty()) {
+            return "/**";
         }
 
-        return path;
+        String[] segments = path.split("/");
+        StringBuilder normalized = new StringBuilder();
+
+        for (String segment : segments) {
+            if (segment.isEmpty())
+                continue;
+
+            if (isUUID(segment) || isNumeric(segment)) {
+                normalized.append("/**");
+                break; // Dừng tại đoạn động
+            } else {
+                normalized.append("/").append(segment);
+            }
+        }
+
+        if (!normalized.toString().contains("**")) {
+            normalized.append("/**");
+        }
+
+        return normalized.toString();
     }
+
+    private boolean isUUID(String str) {
+        return str
+                .matches("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$");
+    }
+
+    private boolean isNumeric(String str) {
+        return str.matches("^\\d+$");
+    }
+
 }

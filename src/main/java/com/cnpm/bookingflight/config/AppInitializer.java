@@ -10,7 +10,8 @@ import com.cnpm.bookingflight.repository.PageRepository;
 import com.cnpm.bookingflight.repository.Page_RoleRepository;
 import com.cnpm.bookingflight.repository.RoleRepository;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
@@ -22,7 +23,6 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 import java.util.*;
 
 @Component
-@RequiredArgsConstructor
 public class AppInitializer {
 
     private final RequestMappingHandlerMapping handlerMapping;
@@ -31,104 +31,108 @@ public class AppInitializer {
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     private final Page_RoleRepository page_RoleRepository;
+    private final AntPathMatcher antPathMatcher = new AntPathMatcher();
 
-    private static final List<String> WHITE_LIST_PATTERNS = List.of(
-            "/auth/**", "/error", "/pages/**");
-
-    private final AntPathMatcher pathMatcher = new AntPathMatcher();
+    public AppInitializer(
+            @Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping handlerMapping,
+            PageRepository pageRepository,
+            RoleRepository roleRepository,
+            AccountRepository accountRepository,
+            PasswordEncoder passwordEncoder,
+            Page_RoleRepository page_RoleRepository) {
+        this.handlerMapping = handlerMapping;
+        this.pageRepository = pageRepository;
+        this.roleRepository = roleRepository;
+        this.accountRepository = accountRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.page_RoleRepository = page_RoleRepository;
+    }
 
     @PostConstruct
     public void init() {
         initializePages();
         initializeAdmin();
         initializeUser();
-
     }
 
     private void initializePages() {
         Map<RequestMappingInfo, HandlerMethod> handlerMethods = handlerMapping.getHandlerMethods();
 
-        for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : handlerMethods.entrySet()) {
+        for (var entry : handlerMethods.entrySet()) {
             RequestMappingInfo mappingInfo = entry.getKey();
-
             Set<String> urlPatterns = resolvePatterns(mappingInfo);
             Set<RequestMethod> methods = mappingInfo.getMethodsCondition().getMethods();
 
             for (String rawUrl : urlPatterns) {
-                String url = normalizePath(rawUrl);
-                if (isWhiteListed(url))
-                    continue;
                 for (RequestMethod method : methods) {
-                    boolean exists = pageRepository.existsByApiPathAndMethod(url, method.name());
-                    if (!exists) {
-                        Page page = Page.builder()
-                                .apiPath(url)
-                                .method(method.name())
-                                .name(generateName(url, method.name()))
-                                .module(extractModule(url))
-                                .build();
-                        pageRepository.save(page);
-                    }
+                    String methodName = method.name();
+
+                    // Bỏ qua các endpoint public không cần tạo quyền
+                    if (PublicEndpoints.isPublic(rawUrl, HttpMethod.valueOf(methodName)))
+                        continue;
+                    String normalizedUrl = normalizePath(rawUrl);
+
+                    if (pageRepository.existsByApiPathAndMethod(normalizedUrl, methodName))
+                        continue;
+
+                    Page page = Page.builder()
+                            .apiPath(normalizedUrl)
+                            .method(methodName)
+                            .name(generatePermissionName(extractModule(normalizedUrl), methodName))
+                            .module(extractModule(normalizedUrl))
+                            .build();
+
+                    pageRepository.save(page);
                 }
             }
         }
     }
 
+    // Phần còn lại giữ nguyên như bạn đã viết
+
     private void initializeAdmin() {
-        Role adminRole = roleRepository.findByRoleName("ADMIN").orElseGet(() -> {
-            Role newRole = Role.builder()
-                    .roleName("ADMIN")
-                    .roleDescription("Admin role")
-                    .build();
-            return roleRepository.save(newRole);
-        });
-        // gán pages cho role admin
-        for (Page page : pageRepository.findAll()) {
+        Role adminRole = roleRepository.findByRoleName("ADMIN")
+                .orElseGet(() -> roleRepository.save(Role.builder().roleName("ADMIN").build()));
+
+        List<Page> allPages = pageRepository.findAll();
+        for (Page page : allPages) {
+            if (page_RoleRepository.existsByPageAndRole(page, adminRole))
+                continue;
             Page_Role page_Role = Page_Role.builder()
+                    // set id từ page và role
                     .id(new Page_RoleId(page.getId(), adminRole.getId()))
                     .page(page)
                     .role(adminRole)
                     .build();
-
             page_RoleRepository.save(page_Role);
         }
 
         boolean existsAdmin = accountRepository.existsByRole(adminRole);
         if (!existsAdmin) {
-            Account account = Account.builder()
+            Account adminAccount = Account.builder()
                     .username("admin")
                     .password(passwordEncoder.encode("admin"))
+                    .fullName("Admin")
                     .role(adminRole)
                     .enabled(true)
-                    .isDeleted(false)
                     .build();
-            accountRepository.save(account);
+            accountRepository.save(adminAccount);
         }
-
     }
 
     private void initializeUser() {
-        Role userRole = roleRepository.findByRoleName("USER").orElseGet(() -> {
-            Role newRole = Role.builder()
-                    .roleName("USER")
-                    .roleDescription("User role")
-                    .build();
-            return roleRepository.save(newRole);
-        });
+        Role userRole = roleRepository.findByRoleName("USER")
+                .orElseGet(() -> roleRepository.save(Role.builder()
+                        .roleName("USER")
+                        .build()));
 
-        // Lấy danh sách các API cho phép user access (ví dụ GET các API public)
-        List<String> allowedPaths = List.of("/my-account/**", "/tickets/**");
-
-        List<Page> allowedPagesForUser = pageRepository.findAll().stream()
-                .filter(page -> page.getMethod().equalsIgnoreCase("GET") &&
-                        allowedPaths.stream().anyMatch(pattern -> pathMatcher.match(pattern, page.getApiPath())))
-                .toList();
-
-        for (Page page : allowedPagesForUser) {
-            Page_RoleId id = new Page_RoleId(page.getId(), userRole.getId());
-            if (!page_RoleRepository.existsById(id)) {
+        for (Page page : pageRepository.findAll()) {
+            if (antPathMatcher.match("/my-account/**", page.getApiPath())
+                    || antPathMatcher.match("/booking-flight/**", page.getApiPath())) {
+                if (page_RoleRepository.existsByPageAndRole(page, userRole))
+                    continue;
                 Page_Role page_Role = Page_Role.builder()
-                        .id(id)
+                        .id(new Page_RoleId(page.getId(), userRole.getId()))
                         .page(page)
                         .role(userRole)
                         .build();
@@ -149,25 +153,18 @@ public class AppInitializer {
     }
 
     private String normalizePath(String path) {
-        // Thay {id}, {abc}... bằng **
         path = path.replaceAll("\\{[^/]+}", "**");
 
-        // Nếu path không kết thúc bằng '/**' và không có phần mở rộng sau tiền tố (ví
-        // dụ: /accounts), thêm '/**'
         if (!path.endsWith("/**")) {
-            path = path.replaceAll("/$", ""); // xóa dấu "/" cuối nếu có
+            path = path.replaceAll("/$", "");
             path += "/**";
         }
 
         return path;
     }
 
-    private boolean isWhiteListed(String path) {
-        return WHITE_LIST_PATTERNS.stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
-    }
-
-    private String generateName(String path, String method) {
-        return method + " " + path;
+    private String generatePermissionName(String model, String method) {
+        return method + "_" + model;
     }
 
     private String extractModule(String path) {

@@ -5,6 +5,7 @@ import com.cnpm.bookingflight.domain.Page_Role;
 import com.cnpm.bookingflight.domain.Role;
 import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.RoleRequest;
+import com.cnpm.bookingflight.dto.request.RoleRequest.PageInfo;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.RoleResponse;
 import com.cnpm.bookingflight.exception.AppException;
@@ -19,6 +20,9 @@ import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+
+import java.util.List;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
@@ -37,26 +41,27 @@ public class RoleService {
         final ResultPaginationMapper resultPaginationMapper;
 
         public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllRoles(Specification<Role> spec,
-                                                                            Pageable pageable) {
+                        Pageable pageable) {
                 spec = spec.and((root, query, cb) -> cb.equal(root.get("isDeleted"), false));
                 ResultPaginationDTO result = resultPaginationMapper
-                        .toResultPagination(roleRepository.findAll(spec, pageable).map(roleMapper::toRoleResponse));
+                                .toResultPagination(
+                                                roleRepository.findAll(spec, pageable).map(roleMapper::toRoleResponse));
                 APIResponse<ResultPaginationDTO> response = APIResponse.<ResultPaginationDTO>builder()
-                        .status(200)
-                        .message("Get all roles successfully")
-                        .data(result)
-                        .build();
+                                .status(200)
+                                .message("Get all roles successfully")
+                                .data(result)
+                                .build();
                 return ResponseEntity.ok(response);
         }
 
         public ResponseEntity<APIResponse<RoleResponse>> getRoleById(Long id) {
                 APIResponse<RoleResponse> response = APIResponse.<RoleResponse>builder()
-                        .data(roleRepository.findById(id)
-                                .map(roleMapper::toRoleResponse)
-                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)))
-                        .status(200)
-                        .message("Get role by id successfully")
-                        .build();
+                                .data(roleRepository.findById(id)
+                                                .map(roleMapper::toRoleResponse)
+                                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)))
+                                .status(200)
+                                .message("Get role by id successfully")
+                                .build();
                 return ResponseEntity.ok(response);
         }
 
@@ -69,55 +74,65 @@ public class RoleService {
                 newRole.setIsDeleted(false);
                 Role savedRole = roleRepository.save(newRole);
 
-                for (Long pageId : request.getPages()) {
-                        Page savedPage = pageRepository.findById(pageId)
-                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-                        Page_Role page_Role = page_RoleMapper.toPage_Role(savedPage, savedRole);
-                        page_RoleRepository.save(page_Role);
+                for (PageInfo pageInfo : request.getPageInfos()) {
+                        List<Page> savedPages = pageRepository.findByMethodAndApiPath(pageInfo.getMethod(),
+                                        pageInfo.getApiPath());
+                        if (savedPages.isEmpty()) {
+                                throw new AppException(ErrorCode.NOT_FOUND);
+                        }
+                        for (Page savedPage : savedPages) {
+                                Page_Role page_Role = page_RoleMapper.toPage_Role(savedPage, savedRole);
+                                page_RoleRepository.save(page_Role);
+                        }
                 }
 
                 APIResponse<RoleResponse> response = APIResponse.<RoleResponse>builder()
-                        .data(roleMapper.toRoleResponse(savedRole))
-                        .status(200)
-                        .message("Create role successfully")
-                        .build();
+                                .data(roleMapper.toRoleResponse(savedRole))
+                                .status(200)
+                                .message("Create role successfully")
+                                .build();
                 return ResponseEntity.ok(response);
         }
 
         @Transactional
         public ResponseEntity<APIResponse<RoleResponse>> updateRole(Long id, RoleRequest request) {
                 Role savedRole = roleRepository.findById(id)
-                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
                 page_RoleRepository.deleteAllByRole(savedRole);
                 savedRole.setRoleName(request.getRoleName());
                 savedRole.setIsDeleted(savedRole.getIsDeleted());
                 roleRepository.save(savedRole);
 
-                for (Long pageId : request.getPages()) {
-                        Page savedPage = pageRepository.findById(pageId)
-                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-                        Page_Role page_Role = page_RoleMapper.toPage_Role(savedPage, savedRole);
-                        page_RoleRepository.save(page_Role);
+                for (PageInfo pageInfo : request.getPageInfos()) {
+                        List<Page> savedPages = pageRepository.findByMethodAndApiPath(pageInfo.getMethod(),
+                                        pageInfo.getApiPath());
+                        if (savedPages.isEmpty()) {
+                                throw new AppException(ErrorCode.NOT_FOUND);
+                        }
+                        for (Page savedPage : savedPages) {
+                                Page_Role page_Role = page_RoleMapper.toPage_Role(savedPage, savedRole);
+                                page_RoleRepository.save(page_Role);
+                        }
                 }
                 APIResponse<RoleResponse> response = APIResponse.<RoleResponse>builder()
-                        .data(roleMapper.toRoleResponse(savedRole))
-                        .status(200)
-                        .message("Update role successfully")
-                        .build();
+                                .data(roleMapper.toRoleResponse(savedRole))
+                                .status(200)
+                                .message("Update role successfully")
+                                .build();
                 return ResponseEntity.ok(response);
         }
 
         @Transactional
         public ResponseEntity<APIResponse<Void>> deleteRole(Long id) {
                 Role roleToDelete = roleRepository.findById(id)
-                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
                 roleToDelete.setIsDeleted(true);
                 roleRepository.save(roleToDelete);
                 APIResponse<Void> response = APIResponse.<Void>builder()
-                        .status(200)
-                        .message("Delete role successfully")
-                        .build();
+                                .status(200)
+                                .message("Delete role successfully")
+                                .build();
                 return ResponseEntity.ok(response);
         }
 }
