@@ -23,6 +23,7 @@ public class PublicEndpoints {
                         "/flights/**",
                         "/flights/seats/**",
                         "/files/**",
+                        "/planes/**",
                         "/payment/**");
 
         /* 

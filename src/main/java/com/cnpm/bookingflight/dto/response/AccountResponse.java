@@ -1,7 +1,5 @@
 package com.cnpm.bookingflight.dto.response;
 
-import com.cnpm.bookingflight.domain.Role;
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

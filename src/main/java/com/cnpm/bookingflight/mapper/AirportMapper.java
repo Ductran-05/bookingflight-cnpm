@@ -37,13 +37,14 @@ public class AirportMapper {
     }
 
     public AirportResponse toAirportResponse(Airport airport) {
-        boolean hasForeignKey = flightRepository.existsByDepartureAirportIdOrArrivalAirportId(airport.getId(), airport.getId())
+        boolean hasForeignKey = flightRepository.existsByDepartureAirportIdOrArrivalAirportId(airport.getId(),
+                airport.getId())
                 || flightAirportRepository.existsByAirportId(airport.getId());
         return AirportResponse.builder()
                 .id(airport.getId())
                 .airportCode(airport.getAirportCode())
                 .airportName(airport.getAirportName())
-                .cityName(airport.getCity().getCityName())
+                .city(airport.getCity())
                 .canDelete(!hasForeignKey)
                 .build();
     }

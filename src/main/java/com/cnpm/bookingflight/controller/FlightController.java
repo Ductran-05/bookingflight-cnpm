@@ -11,6 +11,9 @@ import com.turkraft.springfilter.boot.Filter;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+
+import java.util.List;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +29,9 @@ public class FlightController {
 
     @GetMapping
     public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllFlights(@Filter Specification<Flight> spec,
-                                                                          Pageable pageable) {
+            Pageable pageable,
+            @RequestParam(value = "minPrice", required = false) List<Long> minPrice,
+            @RequestParam(value = "maxPrice", required = false) List<Long> maxPrice) {
         return flightService.getAllFlights(spec, pageable);
     }
 
@@ -42,7 +47,7 @@ public class FlightController {
 
     @PutMapping("/{id}")
     public ResponseEntity<APIResponse<FlightResponse>> updateFlight(@PathVariable("id") Long id,
-                                                                    @RequestBody FlightRequest request) {
+            @RequestBody FlightRequest request) {
         return flightService.updateFlight(id, request);
     }
 
