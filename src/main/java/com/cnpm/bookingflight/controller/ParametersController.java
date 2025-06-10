@@ -20,6 +20,11 @@ public class ParametersController {
 
     final ParametersService parametersService;
 
+    @GetMapping
+    public ResponseEntity<APIResponse<Parameters>> getParameters() {
+        return parametersService.getParameters();
+    }
+
     @PutMapping
     public ResponseEntity<APIResponse<Parameters>> updateParameters(
             @Valid @RequestBody ParametersRequest request) {

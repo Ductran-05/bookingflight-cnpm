@@ -3,6 +3,7 @@ package com.cnpm.bookingflight.mapper;
 import com.cnpm.bookingflight.domain.Account;
 import com.cnpm.bookingflight.domain.Role;
 import com.cnpm.bookingflight.dto.request.AccountRequest;
+import com.cnpm.bookingflight.dto.request.UpdateProfileRequest;
 import com.cnpm.bookingflight.dto.response.AccountResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
@@ -39,6 +40,19 @@ public class AccountMapper {
         existingAccount.setPhone(request.getPhone());
         existingAccount.setAvatar(request.getAvatar());
         existingAccount.setRole(role);
+        return existingAccount;
+    }
+
+    public Account updateProfile(UpdateProfileRequest request, Account existingAccount) {
+        if (request.getFullName() != null) {
+            existingAccount.setFullName(request.getFullName());
+        }
+        if (request.getPhone() != null) {
+            existingAccount.setPhone(request.getPhone());
+        }
+        if (request.getAvatar() != null) {
+            existingAccount.setAvatar(request.getAvatar());
+        }
         return existingAccount;
     }
 

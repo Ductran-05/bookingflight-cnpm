@@ -6,6 +6,7 @@ import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.AccountRequest;
 import com.cnpm.bookingflight.dto.request.ChangePasswordRequest;
 import com.cnpm.bookingflight.dto.request.RegisterRequest;
+import com.cnpm.bookingflight.dto.request.UpdateProfileRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.AccountResponse;
 import com.cnpm.bookingflight.exception.AppException;
@@ -105,6 +106,25 @@ public class AccountService {
         APIResponse<AccountResponse> response = APIResponse.<AccountResponse>builder()
                 .status(200)
                 .message("Update account successfully")
+                .data(accountMapper.toAccountResponse(accountRepository.save(updatedAccount)))
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity<APIResponse<AccountResponse>> updateProfile(String username, UpdateProfileRequest request,
+                                                                      MultipartFile avatar) throws IOException {
+        Account existingAccount = accountRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+
+        Account updatedAccount = accountMapper.updateProfile(request, existingAccount);
+        if (avatar != null && !avatar.isEmpty()) {
+            String avatarUrl = imageUploadService.uploadImage(avatar, "avatars");
+            updatedAccount.setAvatar(avatarUrl);
+        }
+
+        APIResponse<AccountResponse> response = APIResponse.<AccountResponse>builder()
+                .status(200)
+                .message("Update profile successfully")
                 .data(accountMapper.toAccountResponse(accountRepository.save(updatedAccount)))
                 .build();
         return ResponseEntity.ok(response);
