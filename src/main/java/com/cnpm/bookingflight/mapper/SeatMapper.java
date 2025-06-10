@@ -23,6 +23,7 @@ public abstract class SeatMapper {
                 .id(seat.getId())
                 .seatCode(seat.getSeatCode())
                 .seatName(seat.getSeatName())
+                .price(seat.getPrice())
                 .canDelete(!hasForeignKey)
                 .build();
     }

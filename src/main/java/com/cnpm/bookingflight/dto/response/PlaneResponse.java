@@ -1,5 +1,7 @@
 package com.cnpm.bookingflight.dto.response;
 
+import com.cnpm.bookingflight.domain.Airline;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,6 +18,6 @@ public class PlaneResponse {
     Long id;
     String planeCode;
     String planeName;
-    String airlineName;
     Boolean canDelete;
+    Airline airline;
 }

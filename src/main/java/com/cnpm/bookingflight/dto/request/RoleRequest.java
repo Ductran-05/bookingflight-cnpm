@@ -2,8 +2,6 @@ package com.cnpm.bookingflight.dto.request;
 
 import java.util.List;
 
-import com.cnpm.bookingflight.domain.Page;
-
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;

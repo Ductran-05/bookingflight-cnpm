@@ -1,5 +1,7 @@
 package com.cnpm.bookingflight.dto.response;
 
+import com.cnpm.bookingflight.domain.City;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,6 +18,6 @@ public class AirportResponse {
     Long id;
     String airportCode;
     String airportName;
-    String cityName;
     Boolean canDelete;
+    City city;
 }

@@ -16,6 +16,6 @@ public class SeatResponse {
     Long id;
     String seatCode;
     String seatName;
-    String seatType;
+    Integer price;
     Boolean canDelete;
 }

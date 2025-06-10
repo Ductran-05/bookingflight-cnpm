@@ -35,7 +35,7 @@ public class PlaneMapper {
                 .id(plane.getId())
                 .planeCode(plane.getPlaneCode())
                 .planeName(plane.getPlaneName())
-                .airlineName(plane.getAirline().getAirlineName())
+                .airline(plane.getAirline())
                 .canDelete(!hasForeignKey)
                 .build();
     }

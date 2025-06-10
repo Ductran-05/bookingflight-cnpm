@@ -84,7 +84,7 @@ public class FlightMapper {
                                 .id(plane.getId())
                                 .planeCode(plane.getPlaneCode())
                                 .planeName(plane.getPlaneName())
-                                .airlineName(plane.getAirline() != null ? plane.getAirline().getAirlineName() : null)
+                                .airline(plane.getAirline())
                                 .build();
         }
 
@@ -93,7 +93,7 @@ public class FlightMapper {
                                 .id(airport.getId())
                                 .airportCode(airport.getAirportCode())
                                 .airportName(airport.getAirportName())
-                                .cityName(airport.getCity() != null ? airport.getCity().getCityName() : null)
+                                .city(airport.getCity())
                                 .build();
         }
 
