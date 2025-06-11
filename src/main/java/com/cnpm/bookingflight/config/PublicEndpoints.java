@@ -13,7 +13,8 @@ public class PublicEndpoints {
                         "/auth/login",
                         "/auth/refresh",
                         "/auth/confirm",
-                        "/auth/register");
+                        "/auth/register",
+                        "/dashboard/**");
 
         public static final List<String> GET_METHODS = List.of(
                         "/airports/**",
@@ -21,7 +22,7 @@ public class PublicEndpoints {
                         "/cities/**",
                         "/airlines/**",
                         "/flights/**",
-                        "/flights/seats/**",
+                        "/seats/**",
                         "/files/**",
                         "/planes/**",
                         "/parameters/**",
