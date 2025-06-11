@@ -57,10 +57,6 @@ public class MonthlyRevenueReportService {
                             })
                             .toList();
 
-                    if (flightsInMonth.isEmpty()) {
-                        throw new AppException(ErrorCode.NO_FLIGHTS_FOUND);
-                    }
-
                     // Tính doanh thu của tháng
                     double monthlyRevenue = 0;
                     List<MonthlyRevenueReportResponse.FlightDetail> flightDetails = new ArrayList<>();
@@ -159,13 +155,19 @@ public class MonthlyRevenueReportService {
                     .build());
         }
 
+        // Nếu không có chuyến bay, tạo báo cáo với giá trị mặc định
+        if (flightsInMonth.isEmpty()) {
+            monthlyRevenue = 0.0;
+            flightDetails = new ArrayList<>();
+        }
+
         // Tạo response DTO
         MonthlyRevenueReportResponse responseDto = MonthlyRevenueReportResponse.builder()
                 .year(year)
                 .month(month)
-                .revenue(report.getRevenue())
+                .revenue(monthlyRevenue)
                 .percentage(report.getPercentage())
-                .flightCount(report.getFlightCount())
+                .flightCount(flightsInMonth.size())
                 .flights(flightDetails)
                 .build();
 
