@@ -52,10 +52,6 @@ public class AnnualRevenueReportService {
                 })
                 .toList();
 
-        if (flightsInYear.isEmpty()) {
-            throw new AppException(ErrorCode.NO_FLIGHTS_FOUND);
-        }
-
         // Tính doanh thu của năm
         double yearlyRevenue = 0;
         for (Flight flight : flightsInYear) {
@@ -159,10 +155,6 @@ public class AnnualRevenueReportService {
                             })
                             .toList();
 
-                    if (flightsInYear.isEmpty()) {
-                        throw new AppException(ErrorCode.NO_FLIGHTS_FOUND);
-                    }
-
                     // Tính doanh thu của năm
                     double yearlyRevenue = 0;
                     for (Flight flight : flightsInYear) {
@@ -188,6 +180,16 @@ public class AnnualRevenueReportService {
         // Tạo danh sách chi tiết cho 12 tháng
         List<AnnualRevenueReportResponse.MonthDetail> monthDetails = new ArrayList<>();
         double yearlyRevenue = report.getRevenue();
+        List<Flight> flightsInYear = flightRepository.findAll().stream() // Định nghĩa lại flightsInYear
+                .filter(flight -> {
+                    LocalDate departureDate = flight.getDepartureDate();
+                    LocalDate startDate = LocalDate.of(year, 1, 1);
+                    LocalDate endDate = LocalDate.of(year, 12, 31);
+                    return departureDate != null &&
+                            !departureDate.isBefore(startDate) &&
+                            !departureDate.isAfter(endDate);
+                })
+                .toList();
 
         for (int month = 1; month <= 12; month++) {
             LocalDate startDate = LocalDate.of(year, month, 1);
@@ -224,10 +226,15 @@ public class AnnualRevenueReportService {
                     .build());
         }
 
+        // Nếu không có chuyến bay, tạo báo cáo với giá trị mặc định
+        if (flightsInYear.isEmpty()) {
+            yearlyRevenue = 0.0;
+        }
+
         // Tạo response DTO
         AnnualRevenueReportResponse responseDto = AnnualRevenueReportResponse.builder()
                 .year(year)
-                .revenue(report.getRevenue())
+                .revenue(yearlyRevenue)
                 .flightCount(report.getFlightCount())
                 .months(monthDetails)
                 .build();
