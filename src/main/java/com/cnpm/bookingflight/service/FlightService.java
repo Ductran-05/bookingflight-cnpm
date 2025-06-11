@@ -32,6 +32,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import jakarta.transaction.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -268,6 +269,7 @@ public class FlightService {
                 return ResponseEntity.ok(response);
         }
 
+        @Transactional
         public ResponseEntity<APIResponse<FlightResponse>> updateFlight(Long id, @Valid FlightRequest request) {
                 validateFlightRequest(request);
 
