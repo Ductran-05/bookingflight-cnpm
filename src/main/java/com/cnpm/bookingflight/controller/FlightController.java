@@ -12,10 +12,12 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,8 +33,16 @@ public class FlightController {
     public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllFlights(@Filter Specification<Flight> spec,
             Pageable pageable,
             @RequestParam(value = "minPrice", required = false) List<Long> minPrice,
-            @RequestParam(value = "maxPrice", required = false) List<Long> maxPrice) {
-        return flightService.getAllFlights(spec, pageable);
+            @RequestParam(value = "maxPrice", required = false) List<Long> maxPrice,
+            @RequestParam(value = "from", required = false) String from,
+            @RequestParam(value = "to", required = false) String to,
+            @RequestParam(value = "arrivalDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate arrivalDate,
+            @RequestParam(value = "departureDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate departureDate,
+            @RequestParam(value = "straight", required = false) Boolean straight,
+            @RequestParam(value = "seat", required = false) List<Long> seats,
+            @RequestParam(value = "airline", required = false) List<Long> airlines) {
+        return flightService.getAllFlights(spec, pageable, minPrice, maxPrice, from, to, arrivalDate, departureDate,
+                straight, seats, airlines);
     }
 
     @GetMapping("/{id}")

@@ -10,7 +10,10 @@ import java.util.List;
 @Repository
 public interface Flight_SeatRepository extends JpaRepository<Flight_Seat, Flight_SeatId> {
     void deleteByIdFlightId(Long flightId);
+
     boolean existsBySeatId(Long seatId);
 
     List<Flight_Seat> findByIdFlightId(Long id);
+
+    boolean existsByFlightIdAndSeatIdIn(Long id, List<Long> seats);
 }

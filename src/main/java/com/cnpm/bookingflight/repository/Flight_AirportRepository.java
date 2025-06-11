@@ -15,4 +15,6 @@ public interface Flight_AirportRepository extends JpaRepository<Flight_Airport, 
     void deleteByIdFlightId(Long id);
 
     boolean existsByAirportId(Long id);
+
+    int countByFlightId(Long id);
 }

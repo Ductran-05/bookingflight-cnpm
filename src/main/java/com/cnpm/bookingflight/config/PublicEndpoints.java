@@ -24,6 +24,7 @@ public class PublicEndpoints {
                         "/flights/seats/**",
                         "/files/**",
                         "/planes/**",
+                        "/parameters/**",
                         "/payment/**");
 
         /* 

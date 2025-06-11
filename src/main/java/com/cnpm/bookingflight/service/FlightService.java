@@ -25,6 +25,9 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
@@ -54,29 +57,33 @@ public class FlightService {
         private void validateFlightRequest(@Valid FlightRequest request) {
                 // Lấy thông số từ bảng Parameters
                 Parameters parameters = parametersRepository.findById(1L)
-                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
                 // Tính thời gian bay
-                LocalDateTime departureDateTime = LocalDateTime.of(request.getDepartureDate(), request.getDepartureTime());
+                LocalDateTime departureDateTime = LocalDateTime.of(request.getDepartureDate(),
+                                request.getDepartureTime());
                 LocalDateTime arrivalDateTime = LocalDateTime.of(request.getArrivalDate(), request.getArrivalTime());
 
                 // Kiểm tra thời gian đến phải sau thời gian đi
                 if (!arrivalDateTime.isAfter(departureDateTime)) {
                         throw new AppException(ErrorCode.INVALID_FLIGHT_DURATION,
-                                "Arrival time must be after departure time");
+                                        "Arrival time must be after departure time");
                 }
 
                 // Kiểm tra thời gian bay tối thiểu
                 long flightDurationMinutes = Duration.between(departureDateTime, arrivalDateTime).toMinutes();
                 if (flightDurationMinutes < parameters.getMinFlightTime()) {
                         throw new AppException(ErrorCode.INVALID_FLIGHT_DURATION,
-                                "Flight duration must be at least " + parameters.getMinFlightTime() + " minutes");
+                                        "Flight duration must be at least " + parameters.getMinFlightTime()
+                                                        + " minutes");
                 }
 
                 // Kiểm tra số lượng sân bay trung gian
-                if (request.getInterAirports() != null && request.getInterAirports().size() > parameters.getMaxInterQuantity()) {
+                if (request.getInterAirports() != null
+                                && request.getInterAirports().size() > parameters.getMaxInterQuantity()) {
                         throw new AppException(ErrorCode.INVALID_INTER_AIRPORTS,
-                                "Number of intermediate airports cannot exceed " + parameters.getMaxInterQuantity());
+                                        "Number of intermediate airports cannot exceed "
+                                                        + parameters.getMaxInterQuantity());
                 }
 
                 // Kiểm tra sân bay trung gian
@@ -85,55 +92,136 @@ public class FlightService {
                                 // Kiểm tra thời gian khởi hành phải sau thời gian đến tại sân bay trung gian
                                 if (!interAirport.getDepartureDateTime().isAfter(interAirport.getArrivalDateTime())) {
                                         throw new AppException(ErrorCode.INVALID_STOP_DURATION,
-                                                "Departure time at intermediate airport must be after arrival time");
+                                                        "Departure time at intermediate airport must be after arrival time");
                                 }
 
                                 // Kiểm tra thời gian dừng tại sân bay trung gian
-                                long stopDurationMinutes = Duration.between(interAirport.getArrivalDateTime(), interAirport.getDepartureDateTime()).toMinutes();
-                                if (stopDurationMinutes < parameters.getMinStopTime() || stopDurationMinutes > parameters.getMaxStopTime()) {
+                                long stopDurationMinutes = Duration.between(interAirport.getArrivalDateTime(),
+                                                interAirport.getDepartureDateTime()).toMinutes();
+                                if (stopDurationMinutes < parameters.getMinStopTime()
+                                                || stopDurationMinutes > parameters.getMaxStopTime()) {
                                         throw new AppException(ErrorCode.INVALID_STOP_DURATION,
-                                                "Stop duration must be between " + parameters.getMinStopTime() + " and " + parameters.getMaxStopTime() + " minutes");
+                                                        "Stop duration must be between " + parameters.getMinStopTime()
+                                                                        + " and " + parameters.getMaxStopTime()
+                                                                        + " minutes");
                                 }
 
                                 // Kiểm tra thời gian đến của sân bay trung gian nằm trong khoảng thời gian bay
                                 if (interAirport.getArrivalDateTime().isBefore(departureDateTime) ||
-                                        interAirport.getArrivalDateTime().isAfter(arrivalDateTime) ||
-                                        interAirport.getDepartureDateTime().isBefore(departureDateTime) ||
-                                        interAirport.getDepartureDateTime().isAfter(arrivalDateTime)) {
+                                                interAirport.getArrivalDateTime().isAfter(arrivalDateTime) ||
+                                                interAirport.getDepartureDateTime().isBefore(departureDateTime) ||
+                                                interAirport.getDepartureDateTime().isAfter(arrivalDateTime)) {
                                         throw new AppException(ErrorCode.INVALID_STOP_DURATION,
-                                                "Intermediate airport times must be between flight departure and arrival times");
+                                                        "Intermediate airport times must be between flight departure and arrival times");
                                 }
                         }
                 }
         }
 
-        public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllFlights(Specification<Flight> spec, Pageable pageable) {
-                ResultPaginationDTO result = resultPaginationMapper
-                        .toResultPagination(flightRepository.findAll(spec, pageable)
-                                .map(flightMapper::toFlightResponse));
+        public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllFlights(
+                        Specification<Flight> spec,
+                        Pageable pageable,
+                        List<Long> minPrice,
+                        List<Long> maxPrice,
+                        String from,
+                        String to,
+                        LocalDate arrivalDate,
+                        LocalDate departureDate,
+                        Boolean straight,
+                        List<Long> seats,
+                        List<Long> airlines) {
+
+                List<Flight> flights = flightRepository.findAll(spec, pageable).getContent();
+
+                // Lọc
+                if (minPrice != null && !minPrice.isEmpty()) {
+                        long min = minPrice.get(0);
+                        flights = flights.stream()
+                                        .filter(f -> f.getOriginalPrice() >= min)
+                                        .collect(Collectors.toList());
+                }
+                if (maxPrice != null && !maxPrice.isEmpty()) {
+                        long max = maxPrice.get(0);
+                        flights = flights.stream()
+                                        .filter(f -> f.getOriginalPrice() <= max)
+                                        .collect(Collectors.toList());
+                }
+                if (from != null) {
+                        flights = flights.stream()
+                                        .filter(f -> f.getDepartureAirport().getCity().getCityName().equals(from))
+                                        .collect(Collectors.toList());
+                }
+                if (to != null) {
+                        flights = flights.stream()
+                                        .filter(f -> f.getArrivalAirport().getCity().getCityName().equals(to))
+                                        .collect(Collectors.toList());
+                }
+                if (arrivalDate != null) {
+                        flights = flights.stream()
+                                        .filter(f -> f.getArrivalDate().equals(arrivalDate))
+                                        .collect(Collectors.toList());
+                }
+                if (departureDate != null) {
+                        flights = flights.stream()
+                                        .filter(f -> f.getDepartureDate().equals(departureDate))
+                                        .collect(Collectors.toList());
+                }
+                if (straight != null) {
+                        flights = flights.stream()
+                                        .filter(f -> {
+                                                Boolean isStraight = flightAirportRepository
+                                                                .countByFlightId(f.getId()) < 3;
+                                                return isStraight == straight;
+                                        })
+                                        .collect(Collectors.toList());
+                }
+                if (seats != null && !seats.isEmpty()) {
+                        flights = flights.stream()
+                                        .filter(f -> flightSeatRepository.existsByFlightIdAndSeatIdIn(f.getId(), seats))
+                                        .collect(Collectors.toList());
+                }
+                if (airlines != null && !airlines.isEmpty()) {
+                        flights = flights.stream()
+                                        .filter(f -> airlines.contains(f.getPlane().getAirline().getId()))
+                                        .collect(Collectors.toList());
+                }
+                // Map sang DTO
+                List<FlightResponse> responseList = flights.stream()
+                                .map(flightMapper::toFlightResponse)
+                                .collect(Collectors.toList());
+
+                // Tạo Page<FlightResponse>
+                Page<FlightResponse> responsePage = new PageImpl<>(
+                                responseList, pageable, responseList.size());
+
+                // Tạo kết quả phân trang
+                ResultPaginationDTO result = resultPaginationMapper.toResultPagination(responsePage);
+
+                // Gói API response
                 APIResponse<ResultPaginationDTO> response = APIResponse.<ResultPaginationDTO>builder()
-                        .status(200)
-                        .message("Get all flights successfully")
-                        .data(result)
-                        .build();
+                                .status(200)
+                                .message("Get all flights successfully")
+                                .data(result)
+                                .build();
+
                 return ResponseEntity.ok(response);
         }
 
         public ResponseEntity<APIResponse<FlightResponse>> getFlightById(Long id) {
                 Flight flight = flightRepository.findById(id)
-                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
                 boolean hasTickets = ticketRepository.existsByFlightId(id);
                 FlightResponse flightResponse = flightMapper.toFlightResponse(flight)
-                        .toBuilder()
-                        .canUpdate(!hasTickets)
-                        .canDelete(!hasTickets)
-                        .build();
+                                .toBuilder()
+                                .canUpdate(!hasTickets)
+                                .canDelete(!hasTickets)
+                                .build();
 
                 APIResponse<FlightResponse> response = APIResponse.<FlightResponse>builder()
-                        .data(flightResponse)
-                        .status(200)
-                        .message("Get flight by id successfully")
-                        .build();
+                                .data(flightResponse)
+                                .status(200)
+                                .message("Get flight by id successfully")
+                                .build();
                 return ResponseEntity.ok(response);
         }
 
@@ -151,30 +239,32 @@ public class FlightService {
                 // Lưu các sân bay trung gian (Flight_Airport)
                 if (request.getInterAirports() != null && !request.getInterAirports().isEmpty()) {
                         List<Flight_Airport> flightAirports = request.getInterAirports().stream()
-                                .map(flightAirportRequest -> flightAirportMapper.toFlight_Airport(flightAirportRequest, savedFlight.getId()))
-                                .collect(Collectors.toList());
+                                        .map(flightAirportRequest -> flightAirportMapper
+                                                        .toFlight_Airport(flightAirportRequest, savedFlight.getId()))
+                                        .collect(Collectors.toList());
                         flightAirportRepository.saveAll(flightAirports);
                 }
 
                 // Lưu các ghế (Flight_Seat)
                 if (request.getSeats() != null && !request.getSeats().isEmpty()) {
                         List<Flight_Seat> flightSeats = request.getSeats().stream()
-                                .map(flightSeatRequest -> flightSeatMapper.toFlight_Seat(flightSeatRequest, savedFlight.getId()))
-                                .collect(Collectors.toList());
+                                        .map(flightSeatRequest -> flightSeatMapper.toFlight_Seat(flightSeatRequest,
+                                                        savedFlight.getId()))
+                                        .collect(Collectors.toList());
                         flightSeatRepository.saveAll(flightSeats);
                 }
 
                 FlightResponse flightResponse = flightMapper.toFlightResponse(savedFlight)
-                        .toBuilder()
-                        .canUpdate(true)
-                        .canDelete(true)
-                        .build();
+                                .toBuilder()
+                                .canUpdate(true)
+                                .canDelete(true)
+                                .build();
 
                 APIResponse<FlightResponse> response = APIResponse.<FlightResponse>builder()
-                        .data(flightResponse)
-                        .status(201)
-                        .message("Create flight successfully")
-                        .build();
+                                .data(flightResponse)
+                                .status(201)
+                                .message("Create flight successfully")
+                                .build();
                 return ResponseEntity.ok(response);
         }
 
@@ -182,7 +272,7 @@ public class FlightService {
                 validateFlightRequest(request);
 
                 Flight flight = flightRepository.findById(id)
-                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
                 if (ticketRepository.existsByFlightId(id)) {
                         throw new AppException(ErrorCode.FLIGHT_HAS_TICKETS);
                 }
@@ -194,44 +284,46 @@ public class FlightService {
                 flightAirportRepository.deleteByIdFlightId(id);
                 if (request.getInterAirports() != null && !request.getInterAirports().isEmpty()) {
                         List<Flight_Airport> flightAirports = request.getInterAirports().stream()
-                                .map(flightAirportRequest -> flightAirportMapper.toFlight_Airport(flightAirportRequest, savedFlight.getId()))
-                                .collect(Collectors.toList());
+                                        .map(flightAirportRequest -> flightAirportMapper
+                                                        .toFlight_Airport(flightAirportRequest, savedFlight.getId()))
+                                        .collect(Collectors.toList());
                         flightAirportRepository.saveAll(flightAirports);
                 }
 
                 flightSeatRepository.deleteByIdFlightId(id);
                 if (request.getSeats() != null && !request.getSeats().isEmpty()) {
                         List<Flight_Seat> flightSeats = request.getSeats().stream()
-                                .map(flightSeatRequest -> flightSeatMapper.toFlight_Seat(flightSeatRequest, savedFlight.getId()))
-                                .collect(Collectors.toList());
+                                        .map(flightSeatRequest -> flightSeatMapper.toFlight_Seat(flightSeatRequest,
+                                                        savedFlight.getId()))
+                                        .collect(Collectors.toList());
                         flightSeatRepository.saveAll(flightSeats);
                 }
 
                 FlightResponse flightResponse = flightMapper.toFlightResponse(savedFlight)
-                        .toBuilder()
-                        .canUpdate(true)
-                        .canDelete(true)
-                        .build();
+                                .toBuilder()
+                                .canUpdate(true)
+                                .canDelete(true)
+                                .build();
 
                 APIResponse<FlightResponse> response = APIResponse.<FlightResponse>builder()
-                        .data(flightResponse)
-                        .status(200)
-                        .message("Update flight successfully")
-                        .build();
+                                .data(flightResponse)
+                                .status(200)
+                                .message("Update flight successfully")
+                                .build();
                 return ResponseEntity.ok(response);
         }
 
         public ResponseEntity<APIResponse<Void>> deleteFlightById(Long id) {
                 Flight flight = flightRepository.findById(id)
-                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
                 if (ticketRepository.existsByFlightId(id)) {
                         throw new AppException(ErrorCode.FLIGHT_HAS_TICKETS);
                 }
                 flightRepository.deleteById(id);
                 APIResponse<Void> response = APIResponse.<Void>builder()
-                        .status(204)
-                        .message("Delete flight successfully")
-                        .build();
+                                .status(204)
+                                .message("Delete flight successfully")
+                                .build();
                 return ResponseEntity.ok(response);
         }
 
@@ -245,11 +337,11 @@ public class FlightService {
 
                 switch (period.toLowerCase()) {
                         case "month":
-                                long currentMonthCount = flightRepository.countFlightsByMonth(currentYear, currentMonth);
+                                long currentMonthCount = flightRepository.countFlightsByMonth(currentYear,
+                                                currentMonth);
                                 long previousMonthCount = flightRepository.countFlightsByMonth(
-                                        currentMonth == 1 ? currentYear - 1 : currentYear,
-                                        currentMonth == 1 ? 12 : currentMonth - 1
-                                );
+                                                currentMonth == 1 ? currentYear - 1 : currentYear,
+                                                currentMonth == 1 ? 12 : currentMonth - 1);
                                 flightCountResponse.setCurrentPeriodCount(currentMonthCount);
                                 flightCountResponse.setPreviousPeriodCount(previousMonthCount);
                                 break;
@@ -266,10 +358,10 @@ public class FlightService {
                 }
 
                 APIResponse<FlightCountResponse> response = APIResponse.<FlightCountResponse>builder()
-                        .status(200)
-                        .message("Get flight count successfully")
-                        .data(flightCountResponse)
-                        .build();
+                                .status(200)
+                                .message("Get flight count successfully")
+                                .data(flightCountResponse)
+                                .build();
                 return ResponseEntity.ok(response);
         }
 }
