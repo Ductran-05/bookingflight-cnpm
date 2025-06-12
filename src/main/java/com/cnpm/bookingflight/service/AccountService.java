@@ -214,11 +214,11 @@ public class AccountService {
     }
 
     private String buildEmail(String link) {
-        return "Chào bạn,\n\n" +
-                "Cảm ơn bạn đã đăng ký tài khoản. Vui lòng nhấn vào liên kết dưới đây để xác thực email:\n" +
+        return "Dear User,\n\n" +
+                "Thank you for registering an account. Please click the link below to verify your email:\n" +
                 link + "\n\n" +
-                "Liên kết này sẽ hết hạn sau 24 giờ.\n\n" +
-                "Trân trọng.";
+                "This link will expire in 24 hours.\n\n" +
+                "Best regards,\nBookingFlight Team";
     }
 
     public void updateAccountRefreshToken(String refreshToken, String username) {

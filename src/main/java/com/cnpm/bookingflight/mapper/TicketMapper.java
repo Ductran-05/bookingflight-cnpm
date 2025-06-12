@@ -43,31 +43,6 @@ public class TicketMapper {
                 return ticket;
         }
 
-        public Ticket toTicket(TicketRequest request) {
-                TicketRequest.TicketInfo ticketInfo = null;
-                if (request.getTickets() != null && !request.getTickets().isEmpty()) {
-                        ticketInfo = request.getTickets().get(0);
-                } else {
-                        throw new AppException(ErrorCode.INVALID);
-                }
-
-                Long seatId = ticketInfo.getSeatId();
-                if (seatId == null) {
-                        throw new AppException(ErrorCode.INVALID);
-                }
-
-                return Ticket.builder()
-                        .flight(flightRepository.findById(request.getFlightId())
-                                .orElseThrow(() -> new AppException(ErrorCode.INVALID)))
-                        .seat(seatRepository.findById(seatId)
-                                .orElseThrow(() -> new AppException(ErrorCode.INVALID)))
-                        .passengerEmail(ticketInfo.getPassengerEmail())
-                        .passengerName(ticketInfo.getPassengerName())
-                        .passengerPhone(ticketInfo.getPassengerPhone())
-                        .passengerIDCard(ticketInfo.getPassengerIDCard())
-                        .userBooking(null) // Đặt userBooking là null cho POST /tickets
-                        .build();
-        }
 
         public Ticket toTicket(TicketRequest.TicketInfo ticketInfo, Long flightId, Long userId) {
                 Flight flight = flightRepository.findById(flightId)

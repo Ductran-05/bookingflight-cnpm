@@ -6,7 +6,6 @@ import com.cnpm.bookingflight.dto.request.TicketRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.BookingRateResponse;
 import com.cnpm.bookingflight.dto.response.RevenueResponse;
-import com.cnpm.bookingflight.dto.response.TicketRefundCheckResponse;
 import com.cnpm.bookingflight.dto.response.TicketResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
@@ -64,20 +63,6 @@ public class TicketController {
     @GetMapping("/booking-rate")
     public ResponseEntity<APIResponse<BookingRateResponse>> getBookingRate() {
         return ticketService.getBookingRate();
-    }
-
-    @GetMapping("/refund-check/{id}")
-    public ResponseEntity<APIResponse<TicketRefundCheckResponse>> checkRefund(@PathVariable("id") Long ticketId) {
-        return ticketService.checkRefund(ticketId);
-    }
-
-    @GetMapping("/user/refund-check/{id}")
-    public ResponseEntity<APIResponse<TicketRefundCheckResponse>> checkAuthRefund(@PathVariable("id") Long ticketId) {
-        String username = SecurityUtil.getCurrentUserLogin()
-                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHORIZED));
-        Long userId = accountRepository.findByUsername(username)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)).getId();
-        return ticketService.checkAuthRefund(ticketId, userId);
     }
 
     @DeleteMapping("/{id}")

@@ -7,7 +7,6 @@ import com.cnpm.bookingflight.dto.request.TicketRequest;
 import com.cnpm.bookingflight.dto.response.APIResponse;
 import com.cnpm.bookingflight.dto.response.BookingRateResponse;
 import com.cnpm.bookingflight.dto.response.RevenueResponse;
-import com.cnpm.bookingflight.dto.response.TicketRefundCheckResponse;
 import com.cnpm.bookingflight.dto.response.TicketResponse;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
@@ -262,94 +261,6 @@ public class TicketService {
         return ResponseEntity.ok(response);
     }
 
-    public ResponseEntity<APIResponse<TicketRefundCheckResponse>> checkRefund(Long ticketId) {
-        Parameters parameters = parametersRepository.findById(1L)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-
-        Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        Flight flight = flightRepository.findById(ticket.getFlight().getId())
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        Flight_Seat flightSeat = flight_SeatRepository.findById(new Flight_SeatId(flight.getId(), ticket.getSeat().getId()))
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-
-        LocalDateTime departureDateTime = LocalDateTime.of(
-                flight.getDepartureDate(),
-                flight.getDepartureTime()
-        );
-        LocalDate earliestRefundDate = departureDateTime.minusDays(parameters.getLatestCancelDay()).toLocalDate();
-        boolean canRefund = !LocalDate.now().isAfter(earliestRefundDate);
-
-        TicketRefundCheckResponse responseData = new TicketRefundCheckResponse();
-        responseData.setTicketInfo(new TicketRefundCheckResponse.TicketInfo(
-                ticket.getPassengerName(),
-                ticket.getPassengerEmail(),
-                ticket.getPassengerPhone(),
-                ticket.getPassengerIDCard(),
-                flight.getFlightCode(),
-                flight.getDepartureAirport().getAirportName(),
-                flight.getArrivalAirport().getAirportName(),
-                departureDateTime,
-                ticket.getSeat().getSeatName(),
-                flightSeat.getPrice()
-        ));
-        responseData.setEarliestRefundDate(earliestRefundDate);
-        responseData.setCanRefund(canRefund);
-
-        APIResponse<TicketRefundCheckResponse> response = APIResponse.<TicketRefundCheckResponse>builder()
-                .status(200)
-                .message("Check refund conditions successfully")
-                .data(responseData)
-                .build();
-        return ResponseEntity.ok(response);
-    }
-
-    public ResponseEntity<APIResponse<TicketRefundCheckResponse>> checkAuthRefund(Long ticketId, Long userId) {
-        Parameters parameters = parametersRepository.findById(1L)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-
-        Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        if (ticket.getUserBooking() == null || !ticket.getUserBooking().getId().equals(userId)) {
-            throw new AppException(ErrorCode.UNAUTHORIZED, "You are not authorized to refund this ticket");
-        }
-
-        Flight flight = flightRepository.findById(ticket.getFlight().getId())
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        Flight_Seat flightSeat = flight_SeatRepository.findById(new Flight_SeatId(flight.getId(), ticket.getSeat().getId()))
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-
-        LocalDateTime departureDateTime = LocalDateTime.of(
-                flight.getDepartureDate(),
-                flight.getDepartureTime()
-        );
-        LocalDate earliestRefundDate = departureDateTime.minusDays(parameters.getLatestCancelDay()).toLocalDate();
-        boolean canRefund = !LocalDate.now().isAfter(earliestRefundDate);
-
-        TicketRefundCheckResponse responseData = new TicketRefundCheckResponse();
-        responseData.setTicketInfo(new TicketRefundCheckResponse.TicketInfo(
-                ticket.getPassengerName(),
-                ticket.getPassengerEmail(),
-                ticket.getPassengerPhone(),
-                ticket.getPassengerIDCard(),
-                flight.getFlightCode(),
-                flight.getDepartureAirport().getAirportName(),
-                flight.getArrivalAirport().getAirportName(),
-                departureDateTime,
-                ticket.getSeat().getSeatName(),
-                flightSeat.getPrice()
-        ));
-        responseData.setEarliestRefundDate(earliestRefundDate);
-        responseData.setCanRefund(canRefund);
-
-        APIResponse<TicketRefundCheckResponse> response = APIResponse.<TicketRefundCheckResponse>builder()
-                .status(200)
-                .message("Check refund conditions successfully")
-                .data(responseData)
-                .build();
-        return ResponseEntity.ok(response);
-    }
-
     public ResponseEntity<APIResponse<Void>> deleteTicket(Long ticketId) {
         Parameters parameters = parametersRepository.findById(1L)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
@@ -378,16 +289,16 @@ public class TicketService {
         ticketRepository.deleteById(ticketId);
 
         String emailContent = String.format(
-                "Kính gửi %s,\n\n" +
-                        "Vé của bạn cho chuyến bay %s đã được hoàn thành công.\n" +
-                        "Thông tin chuyến bay:\n" +
-                        "- Từ: %s\n" +
-                        "- Đến: %s\n" +
-                        "- Thời gian khởi hành: %s\n" +
-                        "- Hạng ghế: %s\n" +
-                        "- Số tiền được hoàn: %d VND\n\n" +
-                        "Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!\n" +
-                        "Trân trọng,\nBookingFlight Team",
+                "Dear %s,\n\n" +
+                        "Your ticket for flight %s has been successfully refunded.\n" +
+                        "Flight details:\n" +
+                        "- From: %s\n" +
+                        "- To: %s\n" +
+                        "- Departure time: %s\n" +
+                        "- Seat class: %s\n" +
+                        "- Refunded amount: %d VND\n\n" +
+                        "Thank you for using our services!\n" +
+                        "Best regards,\nBookingFlight Team",
                 ticket.getPassengerName(),
                 flight.getFlightCode(),
                 flight.getDepartureAirport().getAirportName(),
@@ -400,7 +311,7 @@ public class TicketService {
 
         APIResponse<Void> response = APIResponse.<Void>builder()
                 .status(200)
-                .message("Ticket refunded and deleted successfully")
+                .message("Ticket refunded successfully")
                 .build();
         return ResponseEntity.ok(response);
     }
@@ -437,16 +348,16 @@ public class TicketService {
         ticketRepository.deleteById(ticketId);
 
         String emailContent = String.format(
-                "Kính gửi %s,\n\n" +
-                        "Vé của bạn cho chuyến bay %s đã được hoàn thành công.\n" +
-                        "Thông tin chuyến bay:\n" +
-                        "- Từ: %s\n" +
-                        "- Đến: %s\n" +
-                        "- Thời gian khởi hành: %s\n" +
-                        "- Hạng ghế: %s\n" +
-                        "- Số tiền được hoàn: %d VND\n\n" +
-                        "Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!\n" +
-                        "Trân trọng,\nBookingFlight Team",
+                "Dear %s,\n\n" +
+                        "Your ticket for flight %s has been successfully refunded.\n" +
+                        "Flight details:\n" +
+                        "- From: %s\n" +
+                        "- To: %s\n" +
+                        "- Departure time: %s\n" +
+                        "- Seat class: %s\n" +
+                        "- Refunded amount: %d VND\n\n" +
+                        "Thank you for using our services!\n" +
+                        "Best regards,\nBookingFlight Team",
                 ticket.getPassengerName(),
                 flight.getFlightCode(),
                 flight.getDepartureAirport().getAirportName(),
