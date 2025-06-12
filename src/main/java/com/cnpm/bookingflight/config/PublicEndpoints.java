@@ -14,9 +14,7 @@ public class PublicEndpoints {
                         "/dashboard/**",
                         "/pages/**",
                         "/my-profile/**",
-                        "/tickets/user/**",
-                        "/tickets/user/refund-check/**",
-                        "/tickets/refund-check/**");
+                        "/tickets/user/**");
 
         public static final List<String> GET_METHODS = List.of(
                         "/airports/**",

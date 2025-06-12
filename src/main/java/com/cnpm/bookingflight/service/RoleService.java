@@ -86,6 +86,14 @@ public class RoleService {
                         }
                         Page bookingRatePage = pageRepository.findByMethodAndApiPath("GET", "/tickets/booking-rate/**")
                                         .get(0);
+                        Page revenuePage = pageRepository.findByMethodAndApiPath("GET", "/tickets/revenue/**")
+                                        .get(0);
+                        // thêm vào role
+                        Page_Role bookingRatePage_Role = page_RoleMapper.toPage_Role(bookingRatePage, savedRole);
+                        Page_Role revenuePage_Role = page_RoleMapper.toPage_Role(revenuePage, savedRole);
+                        page_RoleRepository.save(bookingRatePage_Role);
+                        page_RoleRepository.save(revenuePage_Role);
+
                 }
 
                 APIResponse<RoleResponse> response = APIResponse.<RoleResponse>builder()
