@@ -84,6 +84,8 @@ public class RoleService {
                                 Page_Role page_Role = page_RoleMapper.toPage_Role(savedPage, savedRole);
                                 page_RoleRepository.save(page_Role);
                         }
+                        Page bookingRatePage = pageRepository.findByMethodAndApiPath("GET", "/tickets/booking-rate/**")
+                                        .get(0);
                 }
 
                 APIResponse<RoleResponse> response = APIResponse.<RoleResponse>builder()
