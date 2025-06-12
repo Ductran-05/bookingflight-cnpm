@@ -39,4 +39,8 @@ public class Ticket {
     String passengerPhone;
     String passengerIDCard;
     Boolean isPaid;
+
+    @ManyToOne
+    @JoinColumn(name = "userBookingId")
+    Account userBooking;
 }

@@ -8,6 +8,8 @@ import com.cnpm.bookingflight.dto.response.BookingRateResponse;
 import com.cnpm.bookingflight.dto.response.RevenueResponse;
 import com.cnpm.bookingflight.dto.response.TicketRefundCheckResponse;
 import com.cnpm.bookingflight.dto.response.TicketResponse;
+import com.cnpm.bookingflight.exception.AppException;
+import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.service.TicketService;
 import com.turkraft.springfilter.boot.Filter;
 import lombok.AccessLevel;
@@ -20,6 +22,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import com.cnpm.bookingflight.Utils.SecurityUtil;
+import com.cnpm.bookingflight.repository.AccountRepository;
+
 @RestController
 @RequestMapping("/tickets")
 @RequiredArgsConstructor
@@ -27,6 +32,7 @@ import java.util.List;
 public class TicketController {
 
     final TicketService ticketService;
+    final AccountRepository accountRepository;
 
     @GetMapping()
     public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllTickets(@Filter Specification<Ticket> spec,
@@ -60,13 +66,47 @@ public class TicketController {
         return ticketService.getBookingRate();
     }
 
-    @GetMapping("/{id}/refund-check")
+    @GetMapping("/refund-check/{id}")
     public ResponseEntity<APIResponse<TicketRefundCheckResponse>> checkRefund(@PathVariable("id") Long ticketId) {
         return ticketService.checkRefund(ticketId);
+    }
+
+    @GetMapping("/user/refund-check/{id}")
+    public ResponseEntity<APIResponse<TicketRefundCheckResponse>> checkAuthRefund(@PathVariable("id") Long ticketId) {
+        String username = SecurityUtil.getCurrentUserLogin()
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHORIZED));
+        Long userId = accountRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)).getId();
+        return ticketService.checkAuthRefund(ticketId, userId);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<APIResponse<Void>> deleteTicket(@PathVariable("id") Long ticketId) {
         return ticketService.deleteTicket(ticketId);
+    }
+
+    @DeleteMapping("/user/{id}")
+    public ResponseEntity<APIResponse<Void>> deleteAuthTicket(@PathVariable("id") Long ticketId) {
+        String username = SecurityUtil.getCurrentUserLogin()
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHORIZED));
+        Long userId = accountRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)).getId();
+        return ticketService.deleteAuthTicket(ticketId, userId);
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<APIResponse<List<TicketResponse>>> getUserTickets() {
+        String username = SecurityUtil.getCurrentUserLogin()
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHORIZED));
+        return ticketService.getUserTickets(username);
+    }
+
+    @PostMapping("/user")
+    public ResponseEntity<APIResponse<List<TicketResponse>>> bookTicketsWithAuth(@RequestBody TicketRequest request) {
+        String username = SecurityUtil.getCurrentUserLogin()
+                .orElseThrow(() -> new AppException(ErrorCode.UNAUTHORIZED));
+        Long userId = accountRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)).getId();
+        return ticketService.bookingTicketWithAuth(request, userId);
     }
 }

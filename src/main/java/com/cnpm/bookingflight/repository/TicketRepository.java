@@ -1,10 +1,13 @@
 package com.cnpm.bookingflight.repository;
 
+import com.cnpm.bookingflight.domain.Account;
 import com.cnpm.bookingflight.domain.Ticket;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public interface TicketRepository extends JpaRepository<Ticket, Long>, JpaSpecificationExecutor<Ticket> {
@@ -37,4 +40,6 @@ public interface TicketRepository extends JpaRepository<Ticket, Long>, JpaSpecif
             "JOIN fs.flight f " +
             "WHERE YEAR(f.departureDate) = :year AND MONTH(f.departureDate) = :month")
     long sumFlightSeatQuantityByMonth(int year, int month);
+
+    List<Ticket> findByUserBooking(Account userBooking);
 }

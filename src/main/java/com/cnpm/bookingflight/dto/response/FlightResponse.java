@@ -32,4 +32,5 @@ public class FlightResponse {
     List<Flight_Seat> seats;
     Boolean canUpdate;
     Boolean canDelete;
+    String status;
 }
