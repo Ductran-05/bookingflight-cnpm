@@ -1,9 +1,6 @@
 package com.cnpm.bookingflight.service;
 
-import com.cnpm.bookingflight.domain.Flight;
-import com.cnpm.bookingflight.domain.Flight_Seat;
-import com.cnpm.bookingflight.domain.Parameters;
-import com.cnpm.bookingflight.domain.Ticket;
+import com.cnpm.bookingflight.domain.*;
 import com.cnpm.bookingflight.domain.id.Flight_SeatId;
 import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.TicketRequest;
@@ -16,10 +13,7 @@ import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.mapper.ResultPaginationMapper;
 import com.cnpm.bookingflight.mapper.TicketMapper;
-import com.cnpm.bookingflight.repository.FlightRepository;
-import com.cnpm.bookingflight.repository.Flight_SeatRepository;
-import com.cnpm.bookingflight.repository.ParametersRepository;
-import com.cnpm.bookingflight.repository.TicketRepository;
+import com.cnpm.bookingflight.repository.*;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +42,7 @@ public class TicketService {
     final FlightRepository flightRepository;
     final ParametersRepository parametersRepository;
     final EmailService emailService;
+    final AccountRepository accountRepository;
 
     public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllTickets(Specification<Ticket> spec,
                                                                           Pageable pageable) {
@@ -108,7 +103,58 @@ public class TicketService {
             flightSeat.setRemainingTickets(flightSeat.getRemainingTickets() - 1);
             flight_SeatRepository.save(flightSeat);
 
-            Ticket ticket = ticketMapper.toTicket(ticketInfo, request.getFlightId());
+            Ticket ticket = ticketMapper.toTicket(ticketInfo, request.getFlightId(), null);
+            tickets.add(ticket);
+        }
+
+        List<Ticket> savedTickets = ticketRepository.saveAll(tickets);
+
+        APIResponse<List<TicketResponse>> response = APIResponse.<List<TicketResponse>>builder()
+                .status(201)
+                .message("Booking tickets successfully")
+                .data(ticketMapper.toTicketResponseList(savedTickets))
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity<APIResponse<List<TicketResponse>>> bookingTicketWithAuth(@Valid TicketRequest request, Long userId) {
+        Parameters parameters = parametersRepository.findById(1L)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+
+        Flight flight = flightRepository.findById(request.getFlightId())
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        LocalDateTime departureDateTime = LocalDateTime.of(flight.getDepartureDate(), flight.getDepartureTime());
+        LocalDateTime bookingDeadline = departureDateTime.minusDays(parameters.getLatestBookingDay());
+        LocalDateTime currentTime = LocalDateTime.now();
+        if (currentTime.isAfter(bookingDeadline)) {
+            throw new AppException(ErrorCode.INVALID_BOOKING_TIME,
+                    "Booking must be made at least " + parameters.getLatestBookingDay() + " day(s) before departure");
+        }
+
+        Map<Long, Integer> seatQuantities = new HashMap<>();
+        for (TicketRequest.TicketInfo ticketInfo : request.getTickets()) {
+            seatQuantities.merge(ticketInfo.getSeatId(), 1, Integer::sum);
+        }
+
+        for (Map.Entry<Long, Integer> entry : seatQuantities.entrySet()) {
+            Long seatId = entry.getKey();
+            int quantity = entry.getValue();
+            Flight_Seat flightSeat = flight_SeatRepository.findById(new Flight_SeatId(request.getFlightId(), seatId))
+                    .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+            if (flightSeat.getRemainingTickets() < quantity) {
+                throw new AppException(ErrorCode.OUT_OF_TICKETS,
+                        "Not enough tickets available for seat ID " + seatId);
+            }
+        }
+
+        List<Ticket> tickets = new ArrayList<>();
+        for (TicketRequest.TicketInfo ticketInfo : request.getTickets()) {
+            Flight_Seat flightSeat = flight_SeatRepository.findById(new Flight_SeatId(request.getFlightId(), ticketInfo.getSeatId()))
+                    .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+            flightSeat.setRemainingTickets(flightSeat.getRemainingTickets() - 1);
+            flight_SeatRepository.save(flightSeat);
+
+            Ticket ticket = ticketMapper.toTicket(ticketInfo, request.getFlightId(), userId);
             tickets.add(ticket);
         }
 
@@ -258,6 +304,52 @@ public class TicketService {
         return ResponseEntity.ok(response);
     }
 
+    public ResponseEntity<APIResponse<TicketRefundCheckResponse>> checkAuthRefund(Long ticketId, Long userId) {
+        Parameters parameters = parametersRepository.findById(1L)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        if (ticket.getUserBooking() == null || !ticket.getUserBooking().getId().equals(userId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED, "You are not authorized to refund this ticket");
+        }
+
+        Flight flight = flightRepository.findById(ticket.getFlight().getId())
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        Flight_Seat flightSeat = flight_SeatRepository.findById(new Flight_SeatId(flight.getId(), ticket.getSeat().getId()))
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+
+        LocalDateTime departureDateTime = LocalDateTime.of(
+                flight.getDepartureDate(),
+                flight.getDepartureTime()
+        );
+        LocalDate earliestRefundDate = departureDateTime.minusDays(parameters.getLatestCancelDay()).toLocalDate();
+        boolean canRefund = !LocalDate.now().isAfter(earliestRefundDate);
+
+        TicketRefundCheckResponse responseData = new TicketRefundCheckResponse();
+        responseData.setTicketInfo(new TicketRefundCheckResponse.TicketInfo(
+                ticket.getPassengerName(),
+                ticket.getPassengerEmail(),
+                ticket.getPassengerPhone(),
+                ticket.getPassengerIDCard(),
+                flight.getFlightCode(),
+                flight.getDepartureAirport().getAirportName(),
+                flight.getArrivalAirport().getAirportName(),
+                departureDateTime,
+                ticket.getSeat().getSeatName(),
+                flightSeat.getPrice()
+        ));
+        responseData.setEarliestRefundDate(earliestRefundDate);
+        responseData.setCanRefund(canRefund);
+
+        APIResponse<TicketRefundCheckResponse> response = APIResponse.<TicketRefundCheckResponse>builder()
+                .status(200)
+                .message("Check refund conditions successfully")
+                .data(responseData)
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
     public ResponseEntity<APIResponse<Void>> deleteTicket(Long ticketId) {
         Parameters parameters = parametersRepository.findById(1L)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
@@ -309,6 +401,78 @@ public class TicketService {
         APIResponse<Void> response = APIResponse.<Void>builder()
                 .status(200)
                 .message("Ticket refunded and deleted successfully")
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity<APIResponse<Void>> deleteAuthTicket(Long ticketId, Long userId) {
+        Parameters parameters = parametersRepository.findById(1L)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        if (ticket.getUserBooking() == null || !ticket.getUserBooking().getId().equals(userId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED, "You are not authorized to delete this ticket");
+        }
+
+        Flight flight = flightRepository.findById(ticket.getFlight().getId())
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        Flight_Seat flightSeat = flight_SeatRepository.findById(new Flight_SeatId(flight.getId(), ticket.getSeat().getId()))
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+
+        LocalDateTime departureDateTime = LocalDateTime.of(
+                flight.getDepartureDate(),
+                flight.getDepartureTime()
+        );
+        LocalDate earliestRefundDate = departureDateTime.minusDays(parameters.getLatestCancelDay()).toLocalDate();
+        if (LocalDate.now().isAfter(earliestRefundDate)) {
+            throw new AppException(ErrorCode.CANNOT_REFUND,
+                    "Cannot refund ticket as it is too close to departure time");
+        }
+
+        int refundedAmount = flightSeat.getPrice();
+        flightSeat.setRemainingTickets(flightSeat.getRemainingTickets() + 1);
+        flight_SeatRepository.save(flightSeat);
+
+        ticketRepository.deleteById(ticketId);
+
+        String emailContent = String.format(
+                "Kính gửi %s,\n\n" +
+                        "Vé của bạn cho chuyến bay %s đã được hoàn thành công.\n" +
+                        "Thông tin chuyến bay:\n" +
+                        "- Từ: %s\n" +
+                        "- Đến: %s\n" +
+                        "- Thời gian khởi hành: %s\n" +
+                        "- Hạng ghế: %s\n" +
+                        "- Số tiền được hoàn: %d VND\n\n" +
+                        "Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!\n" +
+                        "Trân trọng,\nBookingFlight Team",
+                ticket.getPassengerName(),
+                flight.getFlightCode(),
+                flight.getDepartureAirport().getAirportName(),
+                flight.getArrivalAirport().getAirportName(),
+                departureDateTime,
+                ticket.getSeat().getSeatName(),
+                refundedAmount
+        );
+        emailService.send(ticket.getPassengerEmail(), emailContent);
+
+        APIResponse<Void> response = APIResponse.<Void>builder()
+                .status(200)
+                .message("Ticket refunded and deleted successfully")
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
+    public ResponseEntity<APIResponse<List<TicketResponse>>> getUserTickets(String username) {
+        Account user = accountRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        List<Ticket> tickets = ticketRepository.findByUserBooking(user);
+        List<TicketResponse> ticketResponses = ticketMapper.toTicketResponseList(tickets);
+        APIResponse<List<TicketResponse>> response = APIResponse.<List<TicketResponse>>builder()
+                .status(200)
+                .message("Get user tickets successfully")
+                .data(ticketResponses)
                 .build();
         return ResponseEntity.ok(response);
     }
