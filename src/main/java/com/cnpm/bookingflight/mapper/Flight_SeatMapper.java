@@ -27,7 +27,7 @@ public class Flight_SeatMapper {
                                 .quantity(request.getQuantity())
                                 .remainingTickets(request.getQuantity())
                                 .price(flightRepository.findById(flightId).orElseThrow().getOriginalPrice()
-                                                * seatRepository.findById(request.getSeatId()).orElseThrow().getPrice())
+                                                * seatRepository.findById(request.getSeatId()).orElseThrow().getPrice() / 100)
                                 .build();
         }
 }
