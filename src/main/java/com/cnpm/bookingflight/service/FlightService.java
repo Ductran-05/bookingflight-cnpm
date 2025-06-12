@@ -1,9 +1,11 @@
 package com.cnpm.bookingflight.service;
 
+import com.cnpm.bookingflight.domain.Account;
 import com.cnpm.bookingflight.domain.Flight;
 import com.cnpm.bookingflight.domain.Flight_Airport;
 import com.cnpm.bookingflight.domain.Flight_Seat;
 import com.cnpm.bookingflight.domain.Parameters;
+import com.cnpm.bookingflight.domain.Ticket;
 import com.cnpm.bookingflight.dto.ResultPaginationDTO;
 import com.cnpm.bookingflight.dto.request.FlightRequest;
 import com.cnpm.bookingflight.dto.request.Flight_AirportRequest;
@@ -54,8 +56,10 @@ public class FlightService {
         final Flight_SeatRepository flightSeatRepository;
         final ResultPaginationMapper resultPaginationMapper;
         final ParametersRepository parametersRepository;
+        final EmailService emailService;
 
         private void validateFlightRequest(@Valid FlightRequest request) {
+
                 // Lấy thông số từ bảng Parameters
                 Parameters parameters = parametersRepository.findById(1L)
                                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
@@ -214,8 +218,7 @@ public class FlightService {
                 boolean hasTickets = ticketRepository.existsByFlightId(id);
                 FlightResponse flightResponse = flightMapper.toFlightResponse(flight)
                                 .toBuilder()
-                                .canUpdate(!hasTickets)
-                                .canDelete(!hasTickets)
+                                .hasTickets(hasTickets)
                                 .build();
 
                 APIResponse<FlightResponse> response = APIResponse.<FlightResponse>builder()
@@ -257,8 +260,7 @@ public class FlightService {
 
                 FlightResponse flightResponse = flightMapper.toFlightResponse(savedFlight)
                                 .toBuilder()
-                                .canUpdate(true)
-                                .canDelete(true)
+                                .hasTickets(false)
                                 .build();
 
                 APIResponse<FlightResponse> response = APIResponse.<FlightResponse>builder()
@@ -273,11 +275,8 @@ public class FlightService {
         public ResponseEntity<APIResponse<FlightResponse>> updateFlight(Long id, @Valid FlightRequest request) {
                 validateFlightRequest(request);
 
-                Flight flight = flightRepository.findById(id)
+                flightRepository.findById(id)
                                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-                if (ticketRepository.existsByFlightId(id)) {
-                        throw new AppException(ErrorCode.FLIGHT_HAS_TICKETS);
-                }
 
                 Flight updatedFlight = flightMapper.toFlight(request);
                 updatedFlight.setId(id);
@@ -300,11 +299,16 @@ public class FlightService {
                                         .collect(Collectors.toList());
                         flightSeatRepository.saveAll(flightSeats);
                 }
+                if (ticketRepository.existsByFlightId(id)) {
+                        // gửi mail thoong báo có cập nhật về chuyển bay, dùng email service
+                        for (Ticket ticket : ticketRepository.findByFlightId(id)) {
+                                String email = ticket.getPassengerEmail();
+                                emailService.send(email, "Cập nhật chuyến bay");
+                        }
+                }
 
                 FlightResponse flightResponse = flightMapper.toFlightResponse(savedFlight)
                                 .toBuilder()
-                                .canUpdate(true)
-                                .canDelete(true)
                                 .build();
 
                 APIResponse<FlightResponse> response = APIResponse.<FlightResponse>builder()

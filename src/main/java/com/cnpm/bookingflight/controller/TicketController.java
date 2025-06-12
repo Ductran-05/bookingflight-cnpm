@@ -35,7 +35,7 @@ public class TicketController {
 
     @GetMapping()
     public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllTickets(@Filter Specification<Ticket> spec,
-                                                                          Pageable pageable) {
+            Pageable pageable) {
         return ticketService.getAllTickets(spec, pageable);
     }
 
@@ -51,7 +51,7 @@ public class TicketController {
 
     @PutMapping("/{id}")
     public ResponseEntity<APIResponse<TicketResponse>> updateTicket(@PathVariable("id") Long id,
-                                                                    @RequestBody TicketRequest request) {
+            @RequestBody TicketRequest request) {
         return ticketService.updateTicket(id, request);
     }
 
