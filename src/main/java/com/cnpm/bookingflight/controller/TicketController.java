@@ -71,7 +71,7 @@ public class TicketController {
         return ticketService.checkRefund(ticketId);
     }
 
-    @GetMapping("/auth/refund-check/{id}")
+    @GetMapping("/user/refund-check/{id}")
     public ResponseEntity<APIResponse<TicketRefundCheckResponse>> checkAuthRefund(@PathVariable("id") Long ticketId) {
         String username = SecurityUtil.getCurrentUserLogin()
                 .orElseThrow(() -> new AppException(ErrorCode.UNAUTHORIZED));
@@ -85,7 +85,7 @@ public class TicketController {
         return ticketService.deleteTicket(ticketId);
     }
 
-    @DeleteMapping("/auth/{id}")
+    @DeleteMapping("/user/{id}")
     public ResponseEntity<APIResponse<Void>> deleteAuthTicket(@PathVariable("id") Long ticketId) {
         String username = SecurityUtil.getCurrentUserLogin()
                 .orElseThrow(() -> new AppException(ErrorCode.UNAUTHORIZED));
@@ -94,14 +94,14 @@ public class TicketController {
         return ticketService.deleteAuthTicket(ticketId, userId);
     }
 
-    @GetMapping("/auth")
+    @GetMapping("/user")
     public ResponseEntity<APIResponse<List<TicketResponse>>> getUserTickets() {
         String username = SecurityUtil.getCurrentUserLogin()
                 .orElseThrow(() -> new AppException(ErrorCode.UNAUTHORIZED));
         return ticketService.getUserTickets(username);
     }
 
-    @PostMapping("/auth")
+    @PostMapping("/user")
     public ResponseEntity<APIResponse<List<TicketResponse>>> bookTicketsWithAuth(@RequestBody TicketRequest request) {
         String username = SecurityUtil.getCurrentUserLogin()
                 .orElseThrow(() -> new AppException(ErrorCode.UNAUTHORIZED));
