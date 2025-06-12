@@ -127,8 +127,8 @@ public class AppInitializer {
                         .build()));
 
         for (Page page : pageRepository.findAll()) {
-            if (antPathMatcher.match("/my-account/**", page.getApiPath())
-                    || antPathMatcher.match("/booking-flight/**", page.getApiPath())) {
+            if (antPathMatcher.match("/account/**", page.getApiPath())
+                    || antPathMatcher.match("/auth/**", page.getApiPath())) {
                 if (page_RoleRepository.existsByPageAndRole(page, userRole))
                     continue;
                 Page_Role page_Role = Page_Role.builder()
