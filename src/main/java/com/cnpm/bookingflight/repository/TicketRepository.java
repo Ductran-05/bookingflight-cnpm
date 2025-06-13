@@ -1,6 +1,7 @@
 package com.cnpm.bookingflight.repository;
 
 import com.cnpm.bookingflight.domain.Account;
+import com.cnpm.bookingflight.domain.Seat;
 import com.cnpm.bookingflight.domain.Ticket;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -44,4 +45,6 @@ public interface TicketRepository extends JpaRepository<Ticket, Long>, JpaSpecif
         List<Ticket> findByUserBooking(Account userBooking);
 
         Ticket[] findByFlightId(Long id);
+
+        int countTicketsBySeat(Seat seat);
 }

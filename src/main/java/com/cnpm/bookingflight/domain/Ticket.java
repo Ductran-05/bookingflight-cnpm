@@ -25,6 +25,7 @@ public class Ticket {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
+    String ticketCode;
 
     @ManyToOne
     @JoinColumn(name = "flightId")
