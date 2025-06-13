@@ -30,7 +30,6 @@ public class FlightResponse {
     Integer originalPrice;
     List<Flight_AirportResponse> interAirports;
     List<Flight_Seat> seats;
-    Boolean canUpdate;
-    Boolean canDelete;
+    boolean hasTickets;
     String status;
 }
