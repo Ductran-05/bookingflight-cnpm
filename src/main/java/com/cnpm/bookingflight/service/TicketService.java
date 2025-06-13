@@ -45,8 +45,10 @@ public class TicketService {
 
     public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllTickets(Specification<Ticket> spec,
                                                                           Pageable pageable) {
+        Specification<Ticket> finalSpec = Specification.where(spec)
+                .and((root, query, cb) -> cb.equal(root.get("isDeleted"), false)); // Lọc bỏ isDeleted = true
         ResultPaginationDTO result = resultPaginationMapper
-                .toResultPagination(ticketRepository.findAll(spec, pageable).map(ticketMapper::toTicketResponse));
+                .toResultPagination(ticketRepository.findAll(finalSpec, pageable).map(ticketMapper::toTicketResponse));
         APIResponse<ResultPaginationDTO> response = APIResponse.<ResultPaginationDTO>builder()
                 .status(200)
                 .message("Get all tickets successfully")
@@ -56,9 +58,13 @@ public class TicketService {
     }
 
     public ResponseEntity<APIResponse<TicketResponse>> getTicketById(Long id) {
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        if (ticket.getIsDeleted()) {
+            throw new AppException(ErrorCode.NOT_FOUND);
+        }
         APIResponse<TicketResponse> response = APIResponse.<TicketResponse>builder()
-                .data(ticketMapper.toTicketResponse(ticketRepository.findById(id)
-                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND))))
+                .data(ticketMapper.toTicketResponse(ticket))
                 .status(200)
                 .message("Get ticket by id successfully")
                 .build();
@@ -170,6 +176,9 @@ public class TicketService {
     public ResponseEntity<APIResponse<TicketResponse>> updateTicket(Long id, @Valid TicketRequest request) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        if (ticket.getIsDeleted()) {
+            throw new AppException(ErrorCode.NOT_FOUND);
+        }
 
         if (request.getTickets() == null || request.getTickets().isEmpty()) {
             throw new AppException(ErrorCode.INVALID_TICKET_INFO);
@@ -267,6 +276,9 @@ public class TicketService {
 
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        if (ticket.getIsDeleted()) {
+            throw new AppException(ErrorCode.NOT_FOUND);
+        }
         Flight flight = flightRepository.findById(ticket.getFlight().getId())
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
         Flight_Seat flightSeat = flight_SeatRepository.findById(new Flight_SeatId(flight.getId(), ticket.getSeat().getId()))
@@ -286,7 +298,8 @@ public class TicketService {
         flightSeat.setRemainingTickets(flightSeat.getRemainingTickets() + 1);
         flight_SeatRepository.save(flightSeat);
 
-        ticketRepository.deleteById(ticketId);
+        ticket.setIsDeleted(true); // Đặt isDeleted thành true thay vì xóa
+        ticketRepository.save(ticket);
 
         String emailContent = String.format(
                 "Dear %s,\n\n" +
@@ -322,6 +335,9 @@ public class TicketService {
 
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+        if (ticket.getIsDeleted()) {
+            throw new AppException(ErrorCode.NOT_FOUND);
+        }
         if (ticket.getUserBooking() == null || !ticket.getUserBooking().getId().equals(userId)) {
             throw new AppException(ErrorCode.UNAUTHORIZED, "You are not authorized to delete this ticket");
         }
@@ -345,7 +361,8 @@ public class TicketService {
         flightSeat.setRemainingTickets(flightSeat.getRemainingTickets() + 1);
         flight_SeatRepository.save(flightSeat);
 
-        ticketRepository.deleteById(ticketId);
+        ticket.setIsDeleted(true); // Đặt isDeleted thành true thay vì xóa
+        ticketRepository.save(ticket);
 
         String emailContent = String.format(
                 "Dear %s,\n\n" +
@@ -378,7 +395,9 @@ public class TicketService {
     public ResponseEntity<APIResponse<List<TicketResponse>>> getUserTickets(String username) {
         Account user = accountRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
-        List<Ticket> tickets = ticketRepository.findByUserBooking(user);
+        List<Ticket> tickets = ticketRepository.findByUserBooking(user).stream()
+                .filter(ticket -> !ticket.getIsDeleted()) // Lọc bỏ isDeleted = true
+                .toList();
         List<TicketResponse> ticketResponses = ticketMapper.toTicketResponseList(tickets);
         APIResponse<List<TicketResponse>> response = APIResponse.<List<TicketResponse>>builder()
                 .status(200)

@@ -46,4 +46,6 @@ public class Flight {
     LocalTime departureTime;
     LocalTime arrivalTime;
     Integer originalPrice;
+    @Builder.Default
+    Boolean isDeleted = false; // Thêm thuộc tính isDeleted
 }

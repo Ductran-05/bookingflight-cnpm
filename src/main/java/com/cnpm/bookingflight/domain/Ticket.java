@@ -39,6 +39,8 @@ public class Ticket {
     String passengerPhone;
     String passengerIDCard;
     Boolean isPaid;
+    @Builder.Default
+    Boolean isDeleted = false;
 
     @ManyToOne
     @JoinColumn(name = "userBookingId")
