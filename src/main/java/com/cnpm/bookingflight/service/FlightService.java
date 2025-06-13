@@ -237,11 +237,6 @@ public class FlightService {
         public ResponseEntity<APIResponse<FlightResponse>> createFlight(@Valid FlightRequest request) {
                 validateFlightRequest(request);
 
-                Flight existingFlight = flightRepository.findByFlightCode(request.getFlightCode());
-                if (existingFlight != null) {
-                        throw new AppException(ErrorCode.EXISTED);
-                }
-
                 Flight flight = flightMapper.toFlight(request);
                 Flight savedFlight = flightRepository.save(flight);
 

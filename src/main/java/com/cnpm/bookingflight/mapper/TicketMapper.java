@@ -15,6 +15,7 @@ import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.repository.AccountRepository;
 import com.cnpm.bookingflight.repository.FlightRepository;
 import com.cnpm.bookingflight.repository.SeatRepository;
+import com.cnpm.bookingflight.repository.TicketRepository;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -28,13 +29,14 @@ public class TicketMapper {
         final SeatRepository seatRepository;
         final AccountRepository accountRepository;
         final FlightMapper flightMapper;
+        final TicketRepository ticketRepository;
 
         public Ticket updateTicket(Ticket ticket, TicketRequest request) {
                 TicketRequest.TicketInfo ticketInfo = request.getTickets().get(0);
                 ticket.setFlight(flightRepository.findById(request.getFlightId())
-                        .orElseThrow(() -> new AppException(ErrorCode.INVALID)));
+                                .orElseThrow(() -> new AppException(ErrorCode.INVALID)));
                 ticket.setSeat(seatRepository.findById(ticketInfo.getSeatId())
-                        .orElseThrow(() -> new AppException(ErrorCode.INVALID)));
+                                .orElseThrow(() -> new AppException(ErrorCode.INVALID)));
                 ticket.setPassengerEmail(ticketInfo.getPassengerEmail());
                 ticket.setPassengerName(ticketInfo.getPassengerName());
                 ticket.setPassengerPhone(ticketInfo.getPassengerPhone());
@@ -43,43 +45,44 @@ public class TicketMapper {
                 return ticket;
         }
 
-
         public Ticket toTicket(TicketRequest.TicketInfo ticketInfo, Long flightId, Long userId) {
                 Flight flight = flightRepository.findById(flightId)
-                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
                 Seat seat = seatRepository.findById(ticketInfo.getSeatId())
-                        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+                                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
                 Account userBooking = userId != null ? accountRepository.findById(userId)
-                        .orElseThrow(() -> new AppException(ErrorCode.INVALID)) : null;
-
+                                .orElseThrow(() -> new AppException(ErrorCode.INVALID)) : null;
+                String ticketCode = flight.getFlightCode() + (ticketRepository.countTicketsBySeat(seat) + 1);
                 return Ticket.builder()
-                        .flight(flight)
-                        .seat(seat)
-                        .passengerName(ticketInfo.getPassengerName())
-                        .passengerEmail(ticketInfo.getPassengerEmail())
-                        .passengerPhone(ticketInfo.getPassengerPhone())
-                        .passengerIDCard(ticketInfo.getPassengerIDCard())
-                        .userBooking(userBooking)
-                        .isPaid(false)
-                        .build();
+                                .flight(flight)
+                                .ticketCode(ticketCode)
+                                .seat(seat)
+                                .passengerName(ticketInfo.getPassengerName())
+                                .passengerEmail(ticketInfo.getPassengerEmail())
+                                .passengerPhone(ticketInfo.getPassengerPhone())
+                                .passengerIDCard(ticketInfo.getPassengerIDCard())
+                                .userBooking(userBooking)
+                                .isPaid(false)
+                                .build();
         }
 
         public TicketResponse toTicketResponse(Ticket ticket) {
                 return TicketResponse.builder()
-                        .id(ticket.getId())
-                        .flight(flightMapper.toFlightTicketResponse(ticket.getFlight()))
-                        .seat(ticket.getSeat())
-                        .passengerEmail(ticket.getPassengerEmail())
-                        .passengerPhone(ticket.getPassengerPhone())
-                        .passengerIDCard(ticket.getPassengerIDCard())
-                        .passengerName(ticket.getPassengerName())
-                        .userBooking(ticket.getUserBooking()) // Thêm ánh xạ userBooking
-                        .build();
+                                .id(ticket.getId())
+                                .flight(flightMapper.toFlightTicketResponse(ticket.getFlight()))
+                                .seat(ticket.getSeat())
+                                .ticketCode(ticket.getTicketCode())
+                                .passengerEmail(ticket.getPassengerEmail())
+                                .passengerPhone(ticket.getPassengerPhone())
+                                .passengerIDCard(ticket.getPassengerIDCard())
+                                .passengerName(ticket.getPassengerName())
+                                .userBooking(ticket.getUserBooking()) // Thêm ánh xạ userBooking
+                                .build();
         }
 
         public List<TicketResponse> toTicketResponseList(List<Ticket> tickets) {
                 return tickets.stream()
-                        .map(this::toTicketResponse)
-                        .toList();
+                                .map(this::toTicketResponse)
+                                .toList();
         }
 }

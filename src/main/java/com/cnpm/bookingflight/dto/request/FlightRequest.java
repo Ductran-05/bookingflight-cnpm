@@ -19,8 +19,6 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 public class FlightRequest {
-    @NotBlank(message = "flightCode must not be blank")
-    String flightCode;
 
     @NotNull(message = "planeId must not be null")
     Long planeId;

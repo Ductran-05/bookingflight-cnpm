@@ -15,6 +15,7 @@ import com.cnpm.bookingflight.domain.Plane;
 import com.cnpm.bookingflight.dto.request.FlightRequest;
 import com.cnpm.bookingflight.exception.AppException;
 import com.cnpm.bookingflight.exception.ErrorCode;
+import com.cnpm.bookingflight.repository.AirlineRepository;
 import com.cnpm.bookingflight.repository.AirportRepository;
 import com.cnpm.bookingflight.repository.Flight_AirportRepository;
 import com.cnpm.bookingflight.repository.Flight_SeatRepository;
@@ -34,6 +35,7 @@ public class FlightMapper {
         final AirportRepository airportRepository;
         final PlaneRepository planeRepository;
         final TicketRepository ticketRepository;
+        final AirlineRepository airlineRepository;
 
         public FlightResponse toFlightResponse(Flight flight) {
                 List<Flight_Airport> interAirports = flight_AirportRepository.findByIdFlightId(flight.getId());
@@ -73,8 +75,10 @@ public class FlightMapper {
         }
 
         public Flight toFlight(FlightRequest request) {
+                String flightCode = planeRepository.findById(request.getPlaneId()).get().getAirline().getAirlineCode()
+                                + "_" + (airlineRepository.count() + 1);
                 return Flight.builder()
-                                .flightCode(request.getFlightCode())
+                                .flightCode(flightCode)
                                 .plane(planeRepository.findById(request.getPlaneId())
                                                 .orElseThrow(() -> new AppException(ErrorCode.INVALID)))
                                 .departureAirport(airportRepository.findById(request.getDepartureAirportId())
