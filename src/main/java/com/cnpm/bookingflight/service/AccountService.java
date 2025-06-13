@@ -203,7 +203,7 @@ public class AccountService {
         verificationTokenRepository.save(verificationToken);
 
         String link = "http://localhost:8080/auth/confirm?token=" + token;
-        emailService.send(account.getUsername(), buildEmail(link));
+        emailService.send(account.getUsername(), buildEmail(link), "Confirm your email");
 
         APIResponse<AccountResponse> response = APIResponse.<AccountResponse>builder()
                 .status(201)

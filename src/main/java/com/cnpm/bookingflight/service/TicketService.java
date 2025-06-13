@@ -189,12 +189,6 @@ public class TicketService {
                         "Dear %s,\n\n" +
                                 "Thank you for booking a flight with BookingFlight!\n" +
                                 "Your booking has been successfully confirmed. Please find the ticket details in the attached PDF.\n\n" +
-                                "Ticket Information:\n" +
-                                "- Flight Code: %s\n" +
-                                "- Passenger: %s\n" +
-                                "- From: %s\n" +
-                                "- To: %s\n" +
-                                "- Departure Time: %s\n\n" +
                                 "If you have any questions, please contact us.\n" +
                                 "Best regards,\nBookingFlight Team",
                         ticket.getPassengerName(),
@@ -356,6 +350,12 @@ public class TicketService {
                 .setBackgroundColor(lightBlue)
                 .setBorder(Border.NO_BORDER));
         rightTable.addCell(new Cell().add(new Paragraph()
+                        .add(new com.itextpdf.layout.element.Text("\tTicketCode: ").setFont(boldFont))
+                        .add(new com.itextpdf.layout.element.Text(ticket.getTicketCode()).setFont(font))
+                        .setFontSize(10))
+                .setBackgroundColor(lightBlue)
+                .setBorder(Border.NO_BORDER));
+        rightTable.addCell(new Cell().add(new Paragraph()
                         .add(new com.itextpdf.layout.element.Text("\tPassenger: ").setFont(boldFont))
                         .add(new com.itextpdf.layout.element.Text(ticket.getPassengerName()).setFont(font))
                         .setFontSize(10))
@@ -365,10 +365,6 @@ public class TicketService {
                         .add(new com.itextpdf.layout.element.Text("\tSeat: ").setFont(boldFont))
                         .add(new com.itextpdf.layout.element.Text(ticket.getSeat().getSeatName()).setFont(font))
                         .setFontSize(10))
-                .setBackgroundColor(lightBlue)
-                .setBorder(Border.NO_BORDER));
-        rightTable.addCell(new Cell().add(new Paragraph("")
-                        .setHeight(20f))
                 .setBackgroundColor(lightBlue)
                 .setBorder(Border.NO_BORDER));
         rightTable.addCell(new Cell().add(new Paragraph()
@@ -552,7 +548,7 @@ public class TicketService {
                 ticket.getSeat().getSeatName(),
                 refundedAmount
         );
-        emailService.send(ticket.getPassengerEmail(), emailContent);
+        emailService.send(ticket.getPassengerEmail(), emailContent, "Ticket Refund Confirmation ");
 
         APIResponse<Void> response = APIResponse.<Void>builder()
                 .status(200)
@@ -615,7 +611,7 @@ public class TicketService {
                 ticket.getSeat().getSeatName(),
                 refundedAmount
         );
-        emailService.send(ticket.getPassengerEmail(), emailContent);
+        emailService.send(ticket.getPassengerEmail(), emailContent, "Ticket Refund Confirmation ");
 
         APIResponse<Void> response = APIResponse.<Void>builder()
                 .status(200)
