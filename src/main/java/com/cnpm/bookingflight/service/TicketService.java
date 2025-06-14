@@ -131,6 +131,30 @@ public class TicketService {
 
         List<Ticket> savedTickets = ticketRepository.saveAll(tickets);
 
+        // Gửi email thông báo đặt vé thành công
+        for (Ticket ticket : savedTickets) {
+            try {
+                byte[] pdfBytes = generateTicketPdf(ticket);
+                String emailContent = String.format(
+                        "Dear %s,\n\n" +
+                                "Thank you for booking a flight with BookingFlight!\n" +
+                                "Your booking has been successfully confirmed. Please find the ticket details in the attached PDF.\n\n" +
+                                "If you have any questions, please contact us.\n" +
+                                "Best regards,\nBookingFlight Team",
+                        ticket.getPassengerName()
+                );
+                emailService.sendWithAttachment(
+                        ticket.getPassengerEmail(),
+                        "Flight Booking Confirmation - " + ticket.getFlight().getFlightCode(),
+                        emailContent,
+                        "FlightTicket_" + ticket.getId() + ".pdf",
+                        pdfBytes
+                );
+            } catch (Exception e) {
+                System.err.println("Error sending email for ticket " + ticket.getId() + ": " + e.getMessage());
+            }
+        }
+
         APIResponse<List<TicketResponse>> response = APIResponse.<List<TicketResponse>>builder()
                 .status(201)
                 .message("Booking tickets successfully")
@@ -191,12 +215,7 @@ public class TicketService {
                                 "Your booking has been successfully confirmed. Please find the ticket details in the attached PDF.\n\n" +
                                 "If you have any questions, please contact us.\n" +
                                 "Best regards,\nBookingFlight Team",
-                        ticket.getPassengerName(),
-                        ticket.getFlight().getFlightCode(),
-                        ticket.getPassengerName(),
-                        ticket.getFlight().getDepartureAirport().getCity().getCityName(),
-                        ticket.getFlight().getArrivalAirport().getCity().getCityName(),
-                        departureDateTime
+                        ticket.getPassengerName()
                 );
                 emailService.sendWithAttachment(
                         ticket.getPassengerEmail(),
@@ -230,7 +249,7 @@ public class TicketService {
         float[] columnWidths = {0.7f, 0.3f};
         Table mainTable = new Table(columnWidths);
         mainTable.setWidth(UnitValue.createPercentValue(100));
-        mainTable.setBorder(new SolidBorder(1f)); // Keep only the outer border
+        mainTable.setBorder(new SolidBorder(1f));
 
         Table leftTable = new Table(3);
         leftTable.setWidth(UnitValue.createPercentValue(100));
@@ -331,7 +350,6 @@ public class TicketService {
                         .setFontSize(10))
                 .setBorder(Border.NO_BORDER));
 
-        // Add leftTable to mainTable without border
         mainTable.addCell(new Cell().add(leftTable).setBorder(Border.NO_BORDER));
 
         DeviceRgb lightBlue = new DeviceRgb(219, 234, 254);
@@ -384,7 +402,6 @@ public class TicketService {
                 .setBackgroundColor(lightBlue)
                 .setBorder(Border.NO_BORDER));
 
-        // Add rightTable to mainTable without border
         Cell rightCell = new Cell().add(rightTable).setBackgroundColor(lightBlue).setBorder(Border.NO_BORDER);
         mainTable.addCell(rightCell);
 
@@ -548,7 +565,7 @@ public class TicketService {
                 ticket.getSeat().getSeatName(),
                 refundedAmount
         );
-        emailService.send(ticket.getPassengerEmail(), emailContent, "Ticket Refund Confirmation ");
+        emailService.send(ticket.getPassengerEmail(), emailContent, "Ticket Refund Confirmation - " + flight.getFlightCode());
 
         APIResponse<Void> response = APIResponse.<Void>builder()
                 .status(200)
@@ -611,7 +628,7 @@ public class TicketService {
                 ticket.getSeat().getSeatName(),
                 refundedAmount
         );
-        emailService.send(ticket.getPassengerEmail(), emailContent, "Ticket Refund Confirmation ");
+        emailService.send(ticket.getPassengerEmail(), emailContent, "Ticket Refund Confirmation - " + flight.getFlightCode());
 
         APIResponse<Void> response = APIResponse.<Void>builder()
                 .status(200)
