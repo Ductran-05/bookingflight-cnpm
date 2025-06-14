@@ -24,6 +24,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -232,5 +233,28 @@ public class AccountService {
     public Account findByUsernameAndRefreshToken(String username, String refreshToken) {
         return accountRepository.findByUsernameAndRefreshToken(username, refreshToken)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+    }
+
+
+    public ResponseEntity<APIResponse<Void>> changePasswordForCurrentUser(ChangePasswordRequest request) {
+        // Lấy thông tin tài khoản hiện tại từ SecurityContextHolder
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Account account = accountRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
+
+        // Kiểm tra mật khẩu cũ
+        if (!passwordEncoder.matches(request.getOldPassword(), account.getPassword())) {
+            throw new AppException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        // Cập nhật mật khẩu mới
+        account.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        accountRepository.save(account);
+
+        APIResponse<Void> response = APIResponse.<Void>builder()
+                .status(200)
+                .message("Change password successfully")
+                .build();
+        return ResponseEntity.ok(response);
     }
 }
