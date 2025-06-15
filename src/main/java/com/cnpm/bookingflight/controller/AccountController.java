@@ -65,4 +65,9 @@ public class AccountController {
                                                             @RequestBody ChangePasswordRequest request) {
         return accountService.changePassword(id, request);
     }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<APIResponse<Void>> changePasswordForCurrentUser(@RequestBody ChangePasswordRequest request) {
+        return accountService.changePasswordForCurrentUser(request);
+    }
 }

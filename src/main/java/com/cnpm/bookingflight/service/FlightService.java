@@ -42,6 +42,21 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
+import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.layout.borders.Border;
+import com.itextpdf.layout.borders.SolidBorder;
+import java.io.ByteArrayOutputStream;
+
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -280,9 +295,6 @@ public class FlightService {
                 if (flight.getIsDeleted()) {
                         throw new AppException(ErrorCode.NOT_FOUND);
                 }
-                if (ticketRepository.existsByFlightId(id)) {
-                        throw new AppException(ErrorCode.FLIGHT_HAS_TICKETS);
-                }
 
                 Flight updatedFlight = flightMapper.toFlight(request);
                 updatedFlight.setId(id);
@@ -305,17 +317,44 @@ public class FlightService {
                                 .collect(Collectors.toList());
                         flightSeatRepository.saveAll(flightSeats);
                 }
-                if (ticketRepository.existsByFlightId(id)) {
-                        // gửi mail thoong báo có cập nhật về chuyển bay, dùng email service
-                        for (Ticket ticket : ticketRepository.findByFlightId(id)) {
-                                String email = ticket.getPassengerEmail();
-                                emailService.send(email, "Cập nhật chuyến bay");
+
+                // Kiểm tra nếu chuyến bay có vé đã đặt
+                boolean hasTickets = ticketRepository.existsByFlightId(id);
+                if (hasTickets) {
+                        // Lấy danh sách vé của chuyến bay
+                        List<Ticket> tickets = List.of(ticketRepository.findByFlightId(id));
+                        for (Ticket ticket : tickets) {
+                                try {
+                                        // Tạo file PDF vé mới
+                                        byte[] pdfBytes = generateTicketPdf(ticket, savedFlight);
+                                        // Nội dung email thông báo
+                                        String emailContent = String.format(
+                                                "Dear %s,\n\n" +
+                                                        "We would like to inform you that the details of your flight %s have been updated.\n" +
+                                                        "Please find the updated ticket details in the attached PDF.\n\n" +
+                                                        "If you have any questions, please contact us.\n" +
+                                                        "Best regards,\nBookingFlight Team",
+                                                ticket.getPassengerName(),
+                                                savedFlight.getFlightCode()
+                                        );
+                                        // Gửi email với file PDF đính kèm
+                                        emailService.sendWithAttachment(
+                                                ticket.getPassengerEmail(),
+                                                "Flight Update Notification - " + savedFlight.getFlightCode(),
+                                                emailContent,
+                                                "Updated_FlightTicket_" + ticket.getId() + ".pdf",
+                                                pdfBytes
+                                        );
+                                } catch (Exception e) {
+                                        System.err.println("Error sending email for ticket " + ticket.getId() + ": " + e.getMessage());
+                                }
                         }
                 }
 
                 FlightResponse flightResponse = flightMapper.toFlightResponse(savedFlight)
-                                .toBuilder()
-                                .build();
+                        .toBuilder()
+                        .hasTickets(hasTickets)
+                        .build();
 
                 APIResponse<FlightResponse> response = APIResponse.<FlightResponse>builder()
                         .data(flightResponse)
@@ -325,17 +364,235 @@ public class FlightService {
                 return ResponseEntity.ok(response);
         }
 
+        private byte[] generateTicketPdf(Ticket ticket, Flight flight) throws Exception {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                PdfWriter writer = new PdfWriter(baos);
+                PdfDocument pdf = new PdfDocument(writer);
+                Document document = new Document(pdf);
+
+                PdfFont font = PdfFontFactory.createFont("Helvetica", "WinAnsiEncoding");
+                PdfFont boldFont = PdfFontFactory.createFont("Helvetica-Bold", "WinAnsiEncoding");
+
+                float[] columnWidths = {0.7f, 0.3f};
+                Table mainTable = new Table(columnWidths);
+                mainTable.setWidth(UnitValue.createPercentValue(100));
+                mainTable.setBorder(new SolidBorder(1f));
+
+                Table leftTable = new Table(3);
+                leftTable.setWidth(UnitValue.createPercentValue(100));
+                leftTable.setBorder(Border.NO_BORDER);
+
+                Cell titleCell = new Cell(1, 3)
+                        .add(new Paragraph("BOARDING PASS")
+                                .setFont(boldFont)
+                                .setFontSize(12)
+                                .setHeight(20f)
+                                .setTextAlignment(TextAlignment.CENTER))
+                        .setBorder(Border.NO_BORDER);
+                leftTable.addCell(titleCell);
+
+                DeviceRgb blue = new DeviceRgb(38, 76, 230);
+                leftTable.addCell(new Cell().add(new Paragraph(flight.getDepartureAirport().getCity().getCityCode())
+                                .setFont(boldFont)
+                                .setFontSize(20)
+                                .setFontColor(blue)
+                                .setTextAlignment(TextAlignment.CENTER))
+                        .setBorder(Border.NO_BORDER));
+                leftTable.addCell(new Cell().add(new Paragraph("")
+                                .setHeight(20f))
+                        .setBorder(Border.NO_BORDER));
+                leftTable.addCell(new Cell().add(new Paragraph(flight.getArrivalAirport().getCity().getCityCode())
+                                .setFont(boldFont)
+                                .setFontSize(20)
+                                .setFontColor(blue)
+                                .setTextAlignment(TextAlignment.CENTER))
+                        .setBorder(Border.NO_BORDER));
+
+                leftTable.addCell(new Cell().add(new Paragraph(flight.getDepartureAirport().getCity().getCityName())
+                                .setFont(font)
+                                .setFontSize(12)
+                                .setTextAlignment(TextAlignment.CENTER))
+                        .setBorder(Border.NO_BORDER));
+                leftTable.addCell(new Cell().add(new Paragraph("")
+                                .setHeight(20f))
+                        .setBorder(Border.NO_BORDER));
+                leftTable.addCell(new Cell().add(new Paragraph(flight.getArrivalAirport().getCity().getCityName())
+                                .setFont(font)
+                                .setFontSize(12)
+                                .setTextAlignment(TextAlignment.CENTER))
+                        .setBorder(Border.NO_BORDER));
+
+                Cell emptyRowCell = new Cell(1, 3)
+                        .add(new Paragraph("")
+                                .setHeight(10f))
+                        .setBorder(Border.NO_BORDER);
+                leftTable.addCell(emptyRowCell);
+
+                leftTable.addCell(new Cell().add(new Paragraph(flight.getDepartureDate().toString())
+                                .setFont(font)
+                                .setFontSize(10)
+                                .setTextAlignment(TextAlignment.CENTER))
+                        .setBorder(Border.NO_BORDER));
+                leftTable.addCell(new Cell().add(new Paragraph(""))
+                        .setBorder(Border.NO_BORDER));
+                leftTable.addCell(new Cell().add(new Paragraph(flight.getArrivalDate().toString())
+                                .setFont(font)
+                                .setFontSize(10)
+                                .setTextAlignment(TextAlignment.CENTER))
+                        .setBorder(Border.NO_BORDER));
+
+                leftTable.addCell(new Cell().add(new Paragraph(flight.getDepartureTime().toString())
+                                .setFont(font)
+                                .setFontSize(10)
+                                .setTextAlignment(TextAlignment.CENTER))
+                        .setBorder(Border.NO_BORDER));
+                leftTable.addCell(new Cell().add(new Paragraph(""))
+                        .setBorder(Border.NO_BORDER));
+                leftTable.addCell(new Cell().add(new Paragraph(flight.getArrivalTime().toString())
+                                .setFont(font)
+                                .setFontSize(10)
+                                .setTextAlignment(TextAlignment.CENTER))
+                        .setBorder(Border.NO_BORDER));
+
+                leftTable.addCell(new Cell().add(new Paragraph("")
+                                .setHeight(15f))
+                        .setBorder(Border.NO_BORDER));
+                leftTable.addCell(new Cell().add(new Paragraph("")
+                                .setHeight(15f))
+                        .setBorder(Border.NO_BORDER));
+                leftTable.addCell(new Cell().add(new Paragraph("")
+                                .setHeight(15f))
+                        .setBorder(Border.NO_BORDER));
+
+                Cell passengerCell = new Cell(1, 2)
+                        .add(new Paragraph()
+                                .add(new com.itextpdf.layout.element.Text("Passenger: ").setFont(boldFont))
+                                .add(new com.itextpdf.layout.element.Text(ticket.getPassengerName()).setFont(font))
+                                .setFontSize(10))
+                        .setBorder(Border.NO_BORDER);
+                leftTable.addCell(passengerCell);
+                leftTable.addCell(new Cell().add(new Paragraph()
+                                .add(new com.itextpdf.layout.element.Text("Flight: ").setFont(boldFont))
+                                .add(new com.itextpdf.layout.element.Text(flight.getFlightCode()).setFont(font))
+                                .setFontSize(10))
+                        .setBorder(Border.NO_BORDER));
+
+                mainTable.addCell(new Cell().add(leftTable).setBorder(Border.NO_BORDER));
+
+                DeviceRgb lightBlue = new DeviceRgb(219, 234, 254);
+                Table rightTable = new Table(1);
+                rightTable.setWidth(UnitValue.createPercentValue(100));
+                rightTable.setBorder(Border.NO_BORDER);
+
+                rightTable.addCell(new Cell().add(new Paragraph(flight.getPlane().getAirline().getAirlineName())
+                                .setFont(font)
+                                .setFontSize(12)
+                                .setTextAlignment(TextAlignment.CENTER))
+                        .setBackgroundColor(lightBlue)
+                        .setBorder(Border.NO_BORDER));
+                rightTable.addCell(new Cell().add(new Paragraph("")
+                                .setHeight(20f))
+                        .setBackgroundColor(lightBlue)
+                        .setBorder(Border.NO_BORDER));
+                rightTable.addCell(new Cell().add(new Paragraph()
+                                .add(new com.itextpdf.layout.element.Text("\tTicketCode: ").setFont(boldFont))
+                                .add(new com.itextpdf.layout.element.Text(ticket.getTicketCode()).setFont(font))
+                                .setFontSize(10))
+                        .setBackgroundColor(lightBlue)
+                        .setBorder(Border.NO_BORDER));
+                rightTable.addCell(new Cell().add(new Paragraph()
+                                .add(new com.itextpdf.layout.element.Text("\tPassenger: ").setFont(boldFont))
+                                .add(new com.itextpdf.layout.element.Text(ticket.getPassengerName()).setFont(font))
+                                .setFontSize(10))
+                        .setBackgroundColor(lightBlue)
+                        .setBorder(Border.NO_BORDER));
+                rightTable.addCell(new Cell().add(new Paragraph()
+                                .add(new com.itextpdf.layout.element.Text("\tSeat: ").setFont(boldFont))
+                                .add(new com.itextpdf.layout.element.Text(ticket.getSeat().getSeatName()).setFont(font))
+                                .setFontSize(10))
+                        .setBackgroundColor(lightBlue)
+                        .setBorder(Border.NO_BORDER));
+                rightTable.addCell(new Cell().add(new Paragraph()
+                                .add(new com.itextpdf.layout.element.Text("\tDate: ").setFont(boldFont))
+                                .add(new com.itextpdf.layout.element.Text(flight.getDepartureDate().toString()).setFont(font))
+                                .setFontSize(10))
+                        .setBackgroundColor(lightBlue)
+                        .setBorder(Border.NO_BORDER));
+                rightTable.addCell(new Cell().add(new Paragraph()
+                                .add(new com.itextpdf.layout.element.Text("\tBoarding: ").setFont(boldFont))
+                                .add(new com.itextpdf.layout.element.Text(flight.getDepartureTime().toString()).setFont(font))
+                                .setFontSize(10))
+                        .setBackgroundColor(lightBlue)
+                        .setBorder(Border.NO_BORDER));
+                rightTable.addCell(new Cell().add(new Paragraph("")
+                                .setHeight(20f))
+                        .setBackgroundColor(lightBlue)
+                        .setBorder(Border.NO_BORDER));
+
+                Cell rightCell = new Cell().add(rightTable).setBackgroundColor(lightBlue).setBorder(Border.NO_BORDER);
+                mainTable.addCell(rightCell);
+
+                document.add(mainTable);
+
+                Paragraph footer = new Paragraph("Thank you for choosing BookingFlight!")
+                        .setFont(font)
+                        .setFontSize(10)
+                        .setTextAlignment(TextAlignment.CENTER)
+                        .setMarginTop(20);
+                document.add(footer);
+
+                document.close();
+                return baos.toByteArray();
+        }
+
         public ResponseEntity<APIResponse<Void>> deleteFlightById(Long id) {
                 Flight flight = flightRepository.findById(id)
                         .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
                 if (flight.getIsDeleted()) {
                         throw new AppException(ErrorCode.NOT_FOUND);
                 }
-                if (ticketRepository.existsByFlightId(id)) {
-                        throw new AppException(ErrorCode.FLIGHT_HAS_TICKETS);
+
+                // Kiểm tra nếu chuyến bay có vé đã đặt
+                boolean hasTickets = ticketRepository.existsByFlightId(id);
+                if (hasTickets) {
+                        // Lấy danh sách vé của chuyến bay
+                        List<Ticket> tickets = List.of(ticketRepository.findByFlightId(id));
+                        for (Ticket ticket : tickets) {
+                                try {
+                                        // Nội dung email thông báo hủy chuyến bay
+                                        String emailContent = String.format(
+                                                "Dear %s,\n\n" +
+                                                        "We regret to inform you that your flight %s has been canceled.\n" +
+                                                        "Flight Details:\n" +
+                                                        "- Flight Code: %s\n" +
+                                                        "- From: %s\n" +
+                                                        "- To: %s\n" +
+                                                        "- Departure Time: %s\n" +
+                                                        "We apologize for any inconvenience caused. Please contact our support team for assistance with refunds or alternative flight arrangements.\n" +
+                                                        "Best regards,\nBookingFlight Team",
+                                                ticket.getPassengerName(),
+                                                flight.getFlightCode(),
+                                                flight.getFlightCode(),
+                                                flight.getDepartureAirport().getCity().getCityName(),
+                                                flight.getArrivalAirport().getCity().getCityName(),
+                                                LocalDateTime.of(flight.getDepartureDate(), flight.getDepartureTime())
+                                        );
+                                        // Gửi email thông báo
+                                        emailService.send(
+                                                ticket.getPassengerEmail(),
+                                                emailContent,
+                                                "Flight Cancellation Notice"
+                                        );
+                                } catch (Exception e) {
+                                        System.err.println("Error sending cancellation email for ticket " + ticket.getId() + ": " + e.getMessage());
+                                }
+                        }
                 }
-                flight.setIsDeleted(true); // Đặt isDeleted thành true thay vì xóa
+
+                // Đặt isDeleted thành true
+                flight.setIsDeleted(true);
                 flightRepository.save(flight);
+
                 APIResponse<Void> response = APIResponse.<Void>builder()
                         .status(204)
                         .message("Delete flight successfully")

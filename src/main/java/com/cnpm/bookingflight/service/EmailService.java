@@ -18,10 +18,10 @@ public class EmailService {
 
     final JavaMailSender mailSender;
 
-    public void send(String to, String content) {
+    public void send(String to, String content, String subject) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);
-        message.setSubject("Confirm your email");
+        message.setSubject(subject);
         message.setText(content);
         mailSender.send(message);
     }

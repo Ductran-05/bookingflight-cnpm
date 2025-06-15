@@ -13,6 +13,8 @@ import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.mapper.ResultPaginationMapper;
 import com.cnpm.bookingflight.mapper.TicketMapper;
 import com.cnpm.bookingflight.repository.*;
+import com.itextpdf.layout.properties.BorderCollapsePropertyValue;
+import com.itextpdf.layout.properties.Property;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,21 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Cell;
+import com.itextpdf.layout.element.Paragraph;
+import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.TextAlignment;
+import com.itextpdf.layout.properties.UnitValue;
+import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.layout.borders.Border;
+import com.itextpdf.layout.borders.SolidBorder;
+
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -46,7 +63,7 @@ public class TicketService {
     public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllTickets(Specification<Ticket> spec,
                                                                           Pageable pageable) {
         Specification<Ticket> finalSpec = Specification.where(spec)
-                .and((root, query, cb) -> cb.equal(root.get("isDeleted"), false)); // Lọc bỏ isDeleted = true
+                .and((root, query, cb) -> cb.equal(root.get("isDeleted"), false));
         ResultPaginationDTO result = resultPaginationMapper
                 .toResultPagination(ticketRepository.findAll(finalSpec, pageable).map(ticketMapper::toTicketResponse));
         APIResponse<ResultPaginationDTO> response = APIResponse.<ResultPaginationDTO>builder()
@@ -114,6 +131,30 @@ public class TicketService {
 
         List<Ticket> savedTickets = ticketRepository.saveAll(tickets);
 
+        // Gửi email thông báo đặt vé thành công
+        for (Ticket ticket : savedTickets) {
+            try {
+                byte[] pdfBytes = generateTicketPdf(ticket);
+                String emailContent = String.format(
+                        "Dear %s,\n\n" +
+                                "Thank you for booking a flight with BookingFlight!\n" +
+                                "Your booking has been successfully confirmed. Please find the ticket details in the attached PDF.\n\n" +
+                                "If you have any questions, please contact us.\n" +
+                                "Best regards,\nBookingFlight Team",
+                        ticket.getPassengerName()
+                );
+                emailService.sendWithAttachment(
+                        ticket.getPassengerEmail(),
+                        "Flight Booking Confirmation - " + ticket.getFlight().getFlightCode(),
+                        emailContent,
+                        "FlightTicket_" + ticket.getId() + ".pdf",
+                        pdfBytes
+                );
+            } catch (Exception e) {
+                System.err.println("Error sending email for ticket " + ticket.getId() + ": " + e.getMessage());
+            }
+        }
+
         APIResponse<List<TicketResponse>> response = APIResponse.<List<TicketResponse>>builder()
                 .status(201)
                 .message("Booking tickets successfully")
@@ -165,12 +206,216 @@ public class TicketService {
 
         List<Ticket> savedTickets = ticketRepository.saveAll(tickets);
 
+        for (Ticket ticket : savedTickets) {
+            try {
+                byte[] pdfBytes = generateTicketPdf(ticket);
+                String emailContent = String.format(
+                        "Dear %s,\n\n" +
+                                "Thank you for booking a flight with BookingFlight!\n" +
+                                "Your booking has been successfully confirmed. Please find the ticket details in the attached PDF.\n\n" +
+                                "If you have any questions, please contact us.\n" +
+                                "Best regards,\nBookingFlight Team",
+                        ticket.getPassengerName()
+                );
+                emailService.sendWithAttachment(
+                        ticket.getPassengerEmail(),
+                        "Flight Booking Confirmation - " + ticket.getFlight().getFlightCode(),
+                        emailContent,
+                        "FlightTicket_" + ticket.getId() + ".pdf",
+                        pdfBytes
+                );
+            } catch (Exception e) {
+                System.err.println("Error sending email for ticket " + ticket.getId() + ": " + e.getMessage());
+            }
+        }
+
         APIResponse<List<TicketResponse>> response = APIResponse.<List<TicketResponse>>builder()
                 .status(201)
                 .message("Booking tickets successfully")
                 .data(ticketMapper.toTicketResponseList(savedTickets))
                 .build();
         return ResponseEntity.ok(response);
+    }
+
+    private byte[] generateTicketPdf(Ticket ticket) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PdfWriter writer = new PdfWriter(baos);
+        PdfDocument pdf = new PdfDocument(writer);
+        Document document = new Document(pdf);
+
+        PdfFont font = PdfFontFactory.createFont("Helvetica", "WinAnsiEncoding");
+        PdfFont boldFont = PdfFontFactory.createFont("Helvetica-Bold", "WinAnsiEncoding");
+
+        float[] columnWidths = {0.7f, 0.3f};
+        Table mainTable = new Table(columnWidths);
+        mainTable.setWidth(UnitValue.createPercentValue(100));
+        mainTable.setBorder(new SolidBorder(1f));
+
+        Table leftTable = new Table(3);
+        leftTable.setWidth(UnitValue.createPercentValue(100));
+        leftTable.setBorder(Border.NO_BORDER);
+
+        Cell titleCell = new Cell(1, 3)
+                .add(new Paragraph("BOARDING PASS")
+                        .setFont(boldFont)
+                        .setFontSize(12)
+                        .setHeight(20f)
+                        .setTextAlignment(TextAlignment.CENTER))
+                .setBorder(Border.NO_BORDER);
+        leftTable.addCell(titleCell);
+
+        DeviceRgb blue = new DeviceRgb(38, 76, 230);
+        leftTable.addCell(new Cell().add(new Paragraph(ticket.getFlight().getDepartureAirport().getCity().getCityCode())
+                        .setFont(boldFont)
+                        .setFontSize(20)
+                        .setFontColor(blue)
+                        .setTextAlignment(TextAlignment.CENTER))
+                .setBorder(Border.NO_BORDER));
+        leftTable.addCell(new Cell().add(new Paragraph("")
+                        .setHeight(20f))
+                .setBorder(Border.NO_BORDER));
+        leftTable.addCell(new Cell().add(new Paragraph(ticket.getFlight().getArrivalAirport().getCity().getCityCode())
+                        .setFont(boldFont)
+                        .setFontSize(20)
+                        .setFontColor(blue)
+                        .setTextAlignment(TextAlignment.CENTER))
+                .setBorder(Border.NO_BORDER));
+
+        leftTable.addCell(new Cell().add(new Paragraph(ticket.getFlight().getDepartureAirport().getCity().getCityName())
+                        .setFont(font)
+                        .setFontSize(12)
+                        .setTextAlignment(TextAlignment.CENTER))
+                .setBorder(Border.NO_BORDER));
+        leftTable.addCell(new Cell().add(new Paragraph("")
+                        .setHeight(20f))
+                .setBorder(Border.NO_BORDER));
+        leftTable.addCell(new Cell().add(new Paragraph(ticket.getFlight().getArrivalAirport().getCity().getCityName())
+                        .setFont(font)
+                        .setFontSize(12)
+                        .setTextAlignment(TextAlignment.CENTER))
+                .setBorder(Border.NO_BORDER));
+
+        Cell emptyRowCell = new Cell(1, 3)
+                .add(new Paragraph("")
+                        .setHeight(10f))
+                .setBorder(Border.NO_BORDER);
+        leftTable.addCell(emptyRowCell);
+
+        leftTable.addCell(new Cell().add(new Paragraph(ticket.getFlight().getDepartureDate().toString())
+                        .setFont(font)
+                        .setFontSize(10)
+                        .setTextAlignment(TextAlignment.CENTER))
+                .setBorder(Border.NO_BORDER));
+        leftTable.addCell(new Cell().add(new Paragraph(""))
+                .setBorder(Border.NO_BORDER));
+        leftTable.addCell(new Cell().add(new Paragraph(ticket.getFlight().getArrivalDate().toString())
+                        .setFont(font)
+                        .setFontSize(10)
+                        .setTextAlignment(TextAlignment.CENTER))
+                .setBorder(Border.NO_BORDER));
+
+        leftTable.addCell(new Cell().add(new Paragraph(ticket.getFlight().getDepartureTime().toString())
+                        .setFont(font)
+                        .setFontSize(10)
+                        .setTextAlignment(TextAlignment.CENTER))
+                .setBorder(Border.NO_BORDER));
+        leftTable.addCell(new Cell().add(new Paragraph(""))
+                .setBorder(Border.NO_BORDER));
+        leftTable.addCell(new Cell().add(new Paragraph(ticket.getFlight().getArrivalTime().toString())
+                        .setFont(font)
+                        .setFontSize(10)
+                        .setTextAlignment(TextAlignment.CENTER))
+                .setBorder(Border.NO_BORDER));
+
+        leftTable.addCell(new Cell().add(new Paragraph("")
+                        .setHeight(15f))
+                .setBorder(Border.NO_BORDER));
+        leftTable.addCell(new Cell().add(new Paragraph("")
+                        .setHeight(15f))
+                .setBorder(Border.NO_BORDER));
+        leftTable.addCell(new Cell().add(new Paragraph("")
+                        .setHeight(15f))
+                .setBorder(Border.NO_BORDER));
+
+        Cell passengerCell = new Cell(1, 2)
+                .add(new Paragraph()
+                        .add(new com.itextpdf.layout.element.Text("Passenger: ").setFont(boldFont))
+                        .add(new com.itextpdf.layout.element.Text(ticket.getPassengerName()).setFont(font))
+                        .setFontSize(10))
+                .setBorder(Border.NO_BORDER);
+        leftTable.addCell(passengerCell);
+        leftTable.addCell(new Cell().add(new Paragraph()
+                        .add(new com.itextpdf.layout.element.Text("Flight: ").setFont(boldFont))
+                        .add(new com.itextpdf.layout.element.Text(ticket.getFlight().getFlightCode()).setFont(font))
+                        .setFontSize(10))
+                .setBorder(Border.NO_BORDER));
+
+        mainTable.addCell(new Cell().add(leftTable).setBorder(Border.NO_BORDER));
+
+        DeviceRgb lightBlue = new DeviceRgb(219, 234, 254);
+        Table rightTable = new Table(1);
+        rightTable.setWidth(UnitValue.createPercentValue(100));
+        rightTable.setBorder(Border.NO_BORDER);
+
+        rightTable.addCell(new Cell().add(new Paragraph(ticket.getFlight().getPlane().getAirline().getAirlineName())
+                        .setFont(font)
+                        .setFontSize(12)
+                        .setTextAlignment(TextAlignment.CENTER))
+                .setBackgroundColor(lightBlue)
+                .setBorder(Border.NO_BORDER));
+        rightTable.addCell(new Cell().add(new Paragraph("")
+                        .setHeight(20f))
+                .setBackgroundColor(lightBlue)
+                .setBorder(Border.NO_BORDER));
+        rightTable.addCell(new Cell().add(new Paragraph()
+                        .add(new com.itextpdf.layout.element.Text("\tTicketCode: ").setFont(boldFont))
+                        .add(new com.itextpdf.layout.element.Text(ticket.getTicketCode()).setFont(font))
+                        .setFontSize(10))
+                .setBackgroundColor(lightBlue)
+                .setBorder(Border.NO_BORDER));
+        rightTable.addCell(new Cell().add(new Paragraph()
+                        .add(new com.itextpdf.layout.element.Text("\tPassenger: ").setFont(boldFont))
+                        .add(new com.itextpdf.layout.element.Text(ticket.getPassengerName()).setFont(font))
+                        .setFontSize(10))
+                .setBackgroundColor(lightBlue)
+                .setBorder(Border.NO_BORDER));
+        rightTable.addCell(new Cell().add(new Paragraph()
+                        .add(new com.itextpdf.layout.element.Text("\tSeat: ").setFont(boldFont))
+                        .add(new com.itextpdf.layout.element.Text(ticket.getSeat().getSeatName()).setFont(font))
+                        .setFontSize(10))
+                .setBackgroundColor(lightBlue)
+                .setBorder(Border.NO_BORDER));
+        rightTable.addCell(new Cell().add(new Paragraph()
+                        .add(new com.itextpdf.layout.element.Text("\tDate: ").setFont(boldFont))
+                        .add(new com.itextpdf.layout.element.Text(ticket.getFlight().getDepartureDate().toString()).setFont(font))
+                        .setFontSize(10))
+                .setBackgroundColor(lightBlue)
+                .setBorder(Border.NO_BORDER));
+        rightTable.addCell(new Cell().add(new Paragraph()
+                        .add(new com.itextpdf.layout.element.Text("\tBoarding: ").setFont(boldFont))
+                        .add(new com.itextpdf.layout.element.Text(ticket.getFlight().getDepartureTime().toString()).setFont(font))
+                        .setFontSize(10))
+                .setBackgroundColor(lightBlue)
+                .setBorder(Border.NO_BORDER));
+        rightTable.addCell(new Cell().add(new Paragraph("")
+                        .setHeight(20f))
+                .setBackgroundColor(lightBlue)
+                .setBorder(Border.NO_BORDER));
+
+        Cell rightCell = new Cell().add(rightTable).setBackgroundColor(lightBlue).setBorder(Border.NO_BORDER);
+        mainTable.addCell(rightCell);
+
+        document.add(mainTable);
+
+        Paragraph footer = new Paragraph("Thank you for choosing BookingFlight!")
+                .setFont(font)
+                .setFontSize(10)
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginTop(20);
+        document.add(footer);
+
+        document.close();
+        return baos.toByteArray();
     }
 
     public ResponseEntity<APIResponse<TicketResponse>> updateTicket(Long id, @Valid TicketRequest request) {
@@ -294,11 +539,11 @@ public class TicketService {
                     "Cannot refund ticket as it is too close to departure time");
         }
 
-        int refundedAmount = flightSeat.getPrice();
+        int refundedAmount = (int) (flightSeat.getPrice() * parameters.getRefundRate() / 100);
         flightSeat.setRemainingTickets(flightSeat.getRemainingTickets() + 1);
         flight_SeatRepository.save(flightSeat);
 
-        ticket.setIsDeleted(true); // Đặt isDeleted thành true thay vì xóa
+        ticket.setIsDeleted(true);
         ticketRepository.save(ticket);
 
         String emailContent = String.format(
@@ -320,7 +565,7 @@ public class TicketService {
                 ticket.getSeat().getSeatName(),
                 refundedAmount
         );
-        emailService.send(ticket.getPassengerEmail(), emailContent);
+        emailService.send(ticket.getPassengerEmail(), emailContent, "Ticket Refund Confirmation - " + flight.getFlightCode());
 
         APIResponse<Void> response = APIResponse.<Void>builder()
                 .status(200)
@@ -357,11 +602,11 @@ public class TicketService {
                     "Cannot refund ticket as it is too close to departure time");
         }
 
-        int refundedAmount = flightSeat.getPrice();
+        int refundedAmount = (int) (flightSeat.getPrice() * parameters.getRefundRate() / 100);
         flightSeat.setRemainingTickets(flightSeat.getRemainingTickets() + 1);
         flight_SeatRepository.save(flightSeat);
 
-        ticket.setIsDeleted(true); // Đặt isDeleted thành true thay vì xóa
+        ticket.setIsDeleted(true);
         ticketRepository.save(ticket);
 
         String emailContent = String.format(
@@ -383,7 +628,7 @@ public class TicketService {
                 ticket.getSeat().getSeatName(),
                 refundedAmount
         );
-        emailService.send(ticket.getPassengerEmail(), emailContent);
+        emailService.send(ticket.getPassengerEmail(), emailContent, "Ticket Refund Confirmation - " + flight.getFlightCode());
 
         APIResponse<Void> response = APIResponse.<Void>builder()
                 .status(200)
@@ -396,7 +641,7 @@ public class TicketService {
         Account user = accountRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
         List<Ticket> tickets = ticketRepository.findByUserBooking(user).stream()
-                .filter(ticket -> !ticket.getIsDeleted()) // Lọc bỏ isDeleted = true
+                .filter(ticket -> !ticket.getIsDeleted())
                 .toList();
         List<TicketResponse> ticketResponses = ticketMapper.toTicketResponseList(tickets);
         APIResponse<List<TicketResponse>> response = APIResponse.<List<TicketResponse>>builder()
