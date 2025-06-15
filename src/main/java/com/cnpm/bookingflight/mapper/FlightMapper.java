@@ -40,7 +40,7 @@ public class FlightMapper {
         public FlightResponse toFlightResponse(Flight flight) {
                 List<Flight_Airport> interAirports = flight_AirportRepository.findByIdFlightId(flight.getId());
                 List<Flight_Seat> seats = flight_SeatRepository.findByIdFlightId(flight.getId());
-                boolean hasTickets = ticketRepository.existsByFlightId(flight.getId());
+                boolean hasTickets = ticketRepository.existsByFlightIdAndIsDeletedFalse(flight.getId());
 
                 // Tính toán status
                 LocalDate currentDate = LocalDate.now();
