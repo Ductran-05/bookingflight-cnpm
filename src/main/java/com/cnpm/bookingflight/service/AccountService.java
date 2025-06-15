@@ -48,7 +48,7 @@ public class AccountService {
     final RoleRepository roleRepository;
 
     public ResponseEntity<APIResponse<ResultPaginationDTO>> getAllAccounts(Specification<Account> spec,
-                                                                           Pageable pageable) {
+            Pageable pageable) {
         spec = spec.and((root, query, cb) -> cb.equal(root.get("isDeleted"), false));
         Page<AccountResponse> page = accountRepository.findAll(spec, pageable).map(accountMapper::toAccountResponse);
         ResultPaginationDTO resultPaginationDTO = resultPaginationMapper.toResultPagination(page);
@@ -94,7 +94,7 @@ public class AccountService {
     }
 
     public ResponseEntity<APIResponse<AccountResponse>> updateAccount(Long id, AccountRequest request,
-                                                                      MultipartFile avatar) throws IOException {
+            MultipartFile avatar) throws IOException {
         Account existingAccount = accountRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
@@ -113,7 +113,7 @@ public class AccountService {
     }
 
     public ResponseEntity<APIResponse<AccountResponse>> updateProfile(String username, UpdateProfileRequest request,
-                                                                      MultipartFile avatar) throws IOException {
+            MultipartFile avatar) throws IOException {
         Account existingAccount = accountRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
 
@@ -189,7 +189,7 @@ public class AccountService {
                 .phone(request.getPhone())
                 .avatar(request.getAvatar())
                 .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword()))
+                .password(request.getPassword())
                 .isDeleted(false)
                 .role(roleRepository.findByRoleName("USER").orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND)))
                 .build();
@@ -234,7 +234,6 @@ public class AccountService {
         return accountRepository.findByUsernameAndRefreshToken(username, refreshToken)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
     }
-
 
     public ResponseEntity<APIResponse<Void>> changePasswordForCurrentUser(ChangePasswordRequest request) {
         // Lấy thông tin tài khoản hiện tại từ SecurityContextHolder
