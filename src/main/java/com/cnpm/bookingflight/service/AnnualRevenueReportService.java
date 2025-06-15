@@ -11,6 +11,8 @@ import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.repository.AnnualRevenueReportRepository;
 import com.cnpm.bookingflight.repository.FlightRepository;
 import com.cnpm.bookingflight.repository.TicketRepository;
+import com.cnpm.bookingflight.repository.Flight_SeatRepository;
+import com.cnpm.bookingflight.domain.id.Flight_SeatId;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -28,6 +30,7 @@ public class AnnualRevenueReportService {
     final FlightRepository flightRepository;
     final TicketRepository ticketRepository;
     final AnnualRevenueReportRepository annualRevenueReportRepository;
+    final Flight_SeatRepository flightSeatRepository;
 
     public ResponseEntity<APIResponse<List<AnnualRevenueReportResponse>>> generateReport(AnnualRevenueReportRequest request) {
         int year = request.getYear();
@@ -59,7 +62,11 @@ public class AnnualRevenueReportService {
                     .filter(ticket -> ticket.getFlight().getId().equals(flight.getId()))
                     .toList();
             yearlyRevenue += tickets.stream()
-                    .mapToDouble(ticket -> ticket.getSeat().getPrice())
+                    .mapToDouble(ticket -> {
+                        return flightSeatRepository.findById(new Flight_SeatId(flight.getId(), ticket.getSeat().getId()))
+                                .map(fs -> fs.getPrice().doubleValue())
+                                .orElse(0.0);
+                    })
                     .sum();
         }
 
@@ -86,7 +93,11 @@ public class AnnualRevenueReportService {
                         .filter(ticket -> ticket.getFlight().getId().equals(flight.getId()))
                         .toList();
                 monthlyRevenue += tickets.stream()
-                        .mapToDouble(ticket -> ticket.getSeat().getPrice())
+                        .mapToDouble(ticket -> {
+                            return flightSeatRepository.findById(new Flight_SeatId(flight.getId(), ticket.getSeat().getId()))
+                                    .map(fs -> fs.getPrice().doubleValue())
+                                    .orElse(0.0);
+                        })
                         .sum();
             }
 
@@ -162,7 +173,11 @@ public class AnnualRevenueReportService {
                                 .filter(ticket -> ticket.getFlight().getId().equals(flight.getId()))
                                 .toList();
                         yearlyRevenue += tickets.stream()
-                                .mapToDouble(ticket -> ticket.getSeat().getPrice())
+                                .mapToDouble(ticket -> {
+                                    return flightSeatRepository.findById(new Flight_SeatId(flight.getId(), ticket.getSeat().getId()))
+                                            .map(fs -> fs.getPrice().doubleValue())
+                                            .orElse(0.0);
+                                })
                                 .sum();
                     }
 
@@ -180,7 +195,7 @@ public class AnnualRevenueReportService {
         // Tạo danh sách chi tiết cho 12 tháng
         List<AnnualRevenueReportResponse.MonthDetail> monthDetails = new ArrayList<>();
         double yearlyRevenue = report.getRevenue();
-        List<Flight> flightsInYear = flightRepository.findAll().stream() // Định nghĩa lại flightsInYear
+        List<Flight> flightsInYear = flightRepository.findAll().stream()
                 .filter(flight -> {
                     LocalDate departureDate = flight.getDepartureDate();
                     LocalDate startDate = LocalDate.of(year, 1, 1);
@@ -212,7 +227,11 @@ public class AnnualRevenueReportService {
                         .filter(ticket -> ticket.getFlight().getId().equals(flight.getId()))
                         .toList();
                 monthlyRevenue += tickets.stream()
-                        .mapToDouble(ticket -> ticket.getSeat().getPrice())
+                        .mapToDouble(ticket -> {
+                            return flightSeatRepository.findById(new Flight_SeatId(flight.getId(), ticket.getSeat().getId()))
+                                    .map(fs -> fs.getPrice().doubleValue())
+                                    .orElse(0.0);
+                        })
                         .sum();
             }
 

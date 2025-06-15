@@ -14,6 +14,8 @@ import com.cnpm.bookingflight.repository.FlightRepository;
 import com.cnpm.bookingflight.repository.FlightTicketSalesReportRepository;
 import com.cnpm.bookingflight.repository.MonthlyRevenueReportRepository;
 import com.cnpm.bookingflight.repository.TicketRepository;
+import com.cnpm.bookingflight.repository.Flight_SeatRepository;
+import com.cnpm.bookingflight.domain.id.Flight_SeatId;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -32,6 +34,7 @@ public class MonthlyRevenueReportService {
     final TicketRepository ticketRepository;
     final MonthlyRevenueReportRepository monthlyRevenueReportRepository;
     final FlightTicketSalesReportRepository flightTicketSalesReportRepository;
+    final Flight_SeatRepository flightSeatRepository;
 
     public ResponseEntity<APIResponse<MonthlyRevenueReportResponse>> getReport(int year, int month) {
         // Validation: Chỉ cho phép báo cáo tháng trước hoặc sớm hơn
@@ -69,7 +72,12 @@ public class MonthlyRevenueReportService {
                                 .filter(ticket -> ticket.getFlight().getId().equals(flight.getId()))
                                 .toList();
                         double flightRevenue = tickets.stream()
-                                .mapToDouble(ticket -> ticket.getSeat().getPrice())
+                                .mapToDouble(ticket -> {
+                                    // Tìm Flight_Seat dựa trên flightId và seatId
+                                    return flightSeatRepository.findById(new Flight_SeatId(flight.getId(), ticket.getSeat().getId()))
+                                            .map(fs -> fs.getPrice().doubleValue())
+                                            .orElse(0.0);
+                                })
                                 .sum();
                         monthlyRevenue += flightRevenue;
 
@@ -100,7 +108,12 @@ public class MonthlyRevenueReportService {
                                 .filter(ticket -> ticket.getFlight().getId().equals(flight.getId()))
                                 .toList();
                         yearlyRevenue += tickets.stream()
-                                .mapToDouble(ticket -> ticket.getSeat().getPrice())
+                                .mapToDouble(ticket -> {
+                                    // Tìm Flight_Seat dựa trên flightId và seatId
+                                    return flightSeatRepository.findById(new Flight_SeatId(flight.getId(), ticket.getSeat().getId()))
+                                            .map(fs -> fs.getPrice().doubleValue())
+                                            .orElse(0.0);
+                                })
                                 .sum();
                     }
 
@@ -158,7 +171,12 @@ public class MonthlyRevenueReportService {
                     .filter(ticket -> ticket.getFlight().getId().equals(flight.getId()))
                     .toList();
             double flightRevenue = tickets.stream()
-                    .mapToDouble(ticket -> ticket.getSeat().getPrice())
+                    .mapToDouble(ticket -> {
+                        // Tìm Flight_Seat dựa trên flightId và seatId
+                        return flightSeatRepository.findById(new Flight_SeatId(flight.getId(), ticket.getSeat().getId()))
+                                .map(fs -> fs.getPrice().doubleValue())
+                                .orElse(0.0);
+                    })
                     .sum();
             double flightPercentage = monthlyRevenue > 0 ? (flightRevenue / monthlyRevenue) * 100 : 0.0;
 
