@@ -30,4 +30,7 @@ public class ParametersRequest {
 
     @Min(value = 1, message = "latestCancelDay must be greater than 0")
     Integer latestCancelDay;
+
+    @Min(value = 1, message = "RefundRate must be greater than 0")
+    Integer refundRate;
 }

@@ -1,0 +1,2 @@
+INSERT IGNORE INTO Parameters (id, max_inter_quantity, min_inter_quantity, min_flight_time, min_stop_time, max_stop_time, latest_booking_day, latest_cancel_day, refund_rate)
+VALUES (1, 3, 0, 30, 15, 120, 1, 1, 50);
