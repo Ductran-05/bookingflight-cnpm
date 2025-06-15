@@ -539,7 +539,7 @@ public class TicketService {
                     "Cannot refund ticket as it is too close to departure time");
         }
 
-        int refundedAmount = flightSeat.getPrice();
+        int refundedAmount = (int) (flightSeat.getPrice() * parameters.getRefundRate() / 100);
         flightSeat.setRemainingTickets(flightSeat.getRemainingTickets() + 1);
         flight_SeatRepository.save(flightSeat);
 
@@ -602,7 +602,7 @@ public class TicketService {
                     "Cannot refund ticket as it is too close to departure time");
         }
 
-        int refundedAmount = flightSeat.getPrice();
+        int refundedAmount = (int) (flightSeat.getPrice() * parameters.getRefundRate() / 100);
         flightSeat.setRemainingTickets(flightSeat.getRemainingTickets() + 1);
         flight_SeatRepository.save(flightSeat);
 

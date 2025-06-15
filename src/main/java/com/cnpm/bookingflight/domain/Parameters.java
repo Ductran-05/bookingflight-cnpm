@@ -4,15 +4,15 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import lombok.AccessLevel;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Data
 @NoArgsConstructor
 @Entity
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Parameters {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,4 +25,5 @@ public class Parameters {
     Integer maxStopTime;
     Integer latestBookingDay;
     Integer latestCancelDay;
+    Integer refundRate;
 }
