@@ -24,7 +24,7 @@ public enum ErrorCode {
     ACCOUNT_INACTIVE(1018, "Account is inactive"),
     INVALID_PERIOD_TYPE(1019, "Invalid period type, must be 'month' or 'year'"),
     CANNOT_REFUND(1020, "Cannot refund ticket"),
-    FORBIDDEN(403, "Forbidden");
+    FORBIDDEN(403, "Forbidden"), INVALID_AIRPORT(1021, "" );
 
     ErrorCode(int code, String message) {
         this.code = code;

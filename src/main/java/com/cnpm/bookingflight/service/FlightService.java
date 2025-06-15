@@ -40,6 +40,8 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.stream.Collectors;
 
 import com.itextpdf.kernel.font.PdfFont;
@@ -106,9 +108,31 @@ public class FlightService {
                                         + parameters.getMaxInterQuantity());
                 }
 
+                // Kiểm tra sân bay đi và sân bay đến không trùng nhau
+                if (request.getDepartureAirportId().equals(request.getArrivalAirportId())) {
+                        throw new AppException(ErrorCode.INVALID_AIRPORT,
+                                "Departure airport cannot be the same as arrival airport");
+                }
+
                 // Kiểm tra sân bay trung gian
                 if (request.getInterAirports() != null && !request.getInterAirports().isEmpty()) {
+                        // Tạo Set để kiểm tra trùng lặp sân bay trung gian
+                        Set<Long> interAirportIds = new HashSet<>();
                         for (Flight_AirportRequest interAirport : request.getInterAirports()) {
+                                Long airportId = interAirport.getAirportId();
+
+                                // Kiểm tra sân bay trung gian không trùng với sân bay đi hoặc sân bay đến
+                                if (airportId.equals(request.getDepartureAirportId()) || airportId.equals(request.getArrivalAirportId())) {
+                                        throw new AppException(ErrorCode.INVALID_AIRPORT,
+                                                "Intermediate airport cannot be the same as departure or arrival airport");
+                                }
+
+                                // Kiểm tra các sân bay trung gian không trùng nhau
+                                if (!interAirportIds.add(airportId)) {
+                                        throw new AppException(ErrorCode.INVALID_AIRPORT,
+                                                "Duplicate intermediate airports are not allowed");
+                                }
+
                                 // Kiểm tra thời gian khởi hành phải sau thời gian đến tại sân bay trung gian
                                 if (!interAirport.getDepartureDateTime().isAfter(interAirport.getArrivalDateTime())) {
                                         throw new AppException(ErrorCode.INVALID_STOP_DURATION,
@@ -237,9 +261,9 @@ public class FlightService {
                 }
                 boolean hasTickets = ticketRepository.existsByFlightId(id);
                 FlightResponse flightResponse = flightMapper.toFlightResponse(flight)
-                                .toBuilder()
-                                .hasTickets(hasTickets)
-                                .build();
+                        .toBuilder()
+                        .hasTickets(hasTickets)
+                        .build();
 
                 APIResponse<FlightResponse> response = APIResponse.<FlightResponse>builder()
                         .data(flightResponse)
@@ -274,9 +298,9 @@ public class FlightService {
                 }
 
                 FlightResponse flightResponse = flightMapper.toFlightResponse(savedFlight)
-                                .toBuilder()
-                                .hasTickets(false)
-                                .build();
+                        .toBuilder()
+                        .hasTickets(false)
+                        .build();
 
                 APIResponse<FlightResponse> response = APIResponse.<FlightResponse>builder()
                         .data(flightResponse)
