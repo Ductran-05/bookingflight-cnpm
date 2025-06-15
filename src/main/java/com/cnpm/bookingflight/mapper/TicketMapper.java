@@ -52,7 +52,7 @@ public class TicketMapper {
                                 .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND));
                 Account userBooking = userId != null ? accountRepository.findById(userId)
                                 .orElseThrow(() -> new AppException(ErrorCode.INVALID)) : null;
-                String ticketCode = flight.getFlightCode() + (ticketRepository.countTicketsBySeat(seat) + 1);
+                String ticketCode = flight.getFlightCode() + "T" + (ticketRepository.countTicketsBySeat(seat) + 1);
                 return Ticket.builder()
                                 .flight(flight)
                                 .ticketCode(ticketCode)
