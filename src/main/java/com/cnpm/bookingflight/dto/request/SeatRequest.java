@@ -20,7 +20,7 @@ public class SeatRequest {
 
     @NotNull(message = "price must not be null")
     @Min(value = 0, message = "price must be non-negative")
-    Double price;
+    Integer price;
 
     String description;
 }

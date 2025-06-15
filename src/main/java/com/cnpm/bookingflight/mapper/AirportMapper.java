@@ -8,10 +8,13 @@ import com.cnpm.bookingflight.exception.ErrorCode;
 import com.cnpm.bookingflight.repository.CityRepository;
 import com.cnpm.bookingflight.repository.FlightRepository;
 import com.cnpm.bookingflight.repository.Flight_AirportRepository;
+import com.cnpm.bookingflight.repository.Flight_SeatRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDate;
 
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -20,6 +23,7 @@ public class AirportMapper {
     final CityRepository cityRepository;
     final FlightRepository flightRepository;
     final Flight_AirportRepository flightAirportRepository;
+    final Flight_SeatRepository flightSeatRepository;
 
     public Airport toAirport(AirportRequest request) {
         return Airport.builder()
@@ -37,15 +41,24 @@ public class AirportMapper {
     }
 
     public AirportResponse toAirportResponse(Airport airport) {
-        boolean hasForeignKey = flightRepository.existsByDepartureAirportIdOrArrivalAirportId(airport.getId(),
-                airport.getId())
-                || flightAirportRepository.existsByAirportId(airport.getId());
+        boolean hasActiveOrSoldOutFlight = flightRepository.findAll()
+                .stream()
+                .filter(f -> f.getDepartureAirport().getId().equals(airport.getId()) || f.getArrivalAirport().getId().equals(airport.getId()))
+                .anyMatch(f -> {
+                    LocalDate currentDate = LocalDate.now();
+                    boolean isPastDeparture = currentDate.isAfter(f.getDepartureDate());
+                    boolean hasRemainingTickets = flightSeatRepository.findByIdFlightId(f.getId())
+                            .stream().anyMatch(fs -> fs.getRemainingTickets() > 0);
+                    String status = isPastDeparture ? "Expired" : hasRemainingTickets ? "Active" : "Sold out";
+                    return "Active".equals(status) || "Sold out".equals(status);
+                });
+        boolean canDelete = !hasActiveOrSoldOutFlight;
         return AirportResponse.builder()
                 .id(airport.getId())
                 .airportCode(airport.getAirportCode())
                 .airportName(airport.getAirportName())
                 .city(airport.getCity())
-                .canDelete(!hasForeignKey)
+                .canDelete(canDelete)
                 .build();
     }
 }
