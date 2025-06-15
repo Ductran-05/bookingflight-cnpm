@@ -13,7 +13,7 @@ public interface AirlineRepository extends JpaRepository<Airline, Long>, JpaSpec
 
     Airline findByAirlineCode(String airlineCode);
 
-    @Query("SELECT a.id, a.airlineName, COUNT(t.id) " +
+    @Query("SELECT a.id, a.airlineName, COALESCE(COUNT(t.id), 0) " +
             "FROM Airline a " +
             "LEFT JOIN Plane p ON p.airline.id = a.id " +
             "LEFT JOIN Flight f ON f.plane.id = p.id " +

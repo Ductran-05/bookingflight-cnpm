@@ -12,12 +12,14 @@ public interface FlightRepository extends JpaRepository<Flight, Long>, JpaSpecif
 
     @Query("SELECT COALESCE(COUNT(f), 0) " +
             "FROM Flight f " +
-            "WHERE YEAR(f.departureDate) = :year AND MONTH(f.departureDate) = :month")
+            "WHERE f.isDeleted = false " +
+            "AND YEAR(f.departureDate) = :year AND MONTH(f.departureDate) = :month")
     long countFlightsByMonth(int year, int month);
 
     @Query("SELECT COALESCE(COUNT(f), 0) " +
             "FROM Flight f " +
-            "WHERE YEAR(f.departureDate) = :year")
+            "WHERE f.isDeleted = false " +
+            "AND YEAR(f.departureDate) = :year")
     long countFlightsByYear(int year);
 
     boolean existsByDepartureAirportIdOrArrivalAirportId(Long departureAirportId, Long arrivalAirportId);

@@ -137,6 +137,7 @@ public class AirlineService {
                         String airlineName = (String) row[1];
                         long tickets = ((Number) row[2]).longValue();
                         double percentage = (tickets * 100.0) / totalTickets;
+                        percentage = Math.round(percentage * 100) / 100.0; // Làm tròn đến 2 chữ số thập phân
                         airlineInfos.add(new AirlinePopularityResponse.AirlineInfo(airlineName, percentage));
                 }
 
@@ -149,6 +150,7 @@ public class AirlineService {
                 double otherPercentage = airlineInfos.size() > 2
                         ? airlineInfos.subList(2, airlineInfos.size()).stream().mapToDouble(AirlinePopularityResponse.AirlineInfo::getPercentage).sum()
                         : 0.0;
+                otherPercentage = Math.round(otherPercentage * 100) / 100.0; // Làm tròn đến 2 chữ số thập phân
                 responseData.setOtherAirlines(new AirlinePopularityResponse.AirlineInfo("Other Airlines", otherPercentage));
 
                 APIResponse<AirlinePopularityResponse> response = APIResponse.<AirlinePopularityResponse>builder()
