@@ -259,7 +259,7 @@ public class FlightService {
                 if (flight.getIsDeleted()) {
                         throw new AppException(ErrorCode.NOT_FOUND);
                 }
-                boolean hasTickets = ticketRepository.existsByFlightId(id);
+                boolean hasTickets = ticketRepository.existsByFlightIdAndIsDeletedFalse(id);
                 FlightResponse flightResponse = flightMapper.toFlightResponse(flight)
                         .toBuilder()
                         .hasTickets(hasTickets)
@@ -343,7 +343,7 @@ public class FlightService {
                 }
 
                 // Kiểm tra nếu chuyến bay có vé đã đặt
-                boolean hasTickets = ticketRepository.existsByFlightId(id);
+                boolean hasTickets = ticketRepository.existsByFlightIdAndIsDeletedFalse(id);
                 if (hasTickets) {
                         // Lấy danh sách vé của chuyến bay
                         List<Ticket> tickets = List.of(ticketRepository.findByFlightId(id));
@@ -577,7 +577,7 @@ public class FlightService {
                 }
 
                 // Kiểm tra nếu chuyến bay có vé đã đặt
-                boolean hasTickets = ticketRepository.existsByFlightId(id);
+                boolean hasTickets = ticketRepository.existsByFlightIdAndIsDeletedFalse(id);
                 if (hasTickets) {
                         // Lấy danh sách vé của chuyến bay
                         List<Ticket> tickets = List.of(ticketRepository.findByFlightId(id));

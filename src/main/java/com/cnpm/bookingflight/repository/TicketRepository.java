@@ -12,8 +12,7 @@ import java.util.List;
 
 @Repository
 public interface TicketRepository extends JpaRepository<Ticket, Long>, JpaSpecificationExecutor<Ticket> {
-        boolean existsByFlightId(Long flightId);
-
+        boolean existsByFlightIdAndIsDeletedFalse(Long flightId);
         @Query("SELECT COALESCE(SUM(fs.price), 0.0) " +
                         "FROM Ticket t " +
                         "JOIN t.flight f " +

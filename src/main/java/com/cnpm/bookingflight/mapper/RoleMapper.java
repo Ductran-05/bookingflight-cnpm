@@ -31,8 +31,7 @@ public class RoleMapper {
         List<Page> pages = page_RoleRepository.findAllByRole(role).stream()
                 .map(page_Role -> page_Role.getPage())
                 .toList();
-        boolean hasForeignKey = accountRepository.existsByRoleId(role.getId()) ||
-                page_RoleRepository.existsByRoleId(role.getId());
+        boolean hasForeignKey = accountRepository.existsByRoleId(role.getId());
         return RoleResponse.builder()
                 .id(role.getId())
                 .roleName(role.getRoleName())
