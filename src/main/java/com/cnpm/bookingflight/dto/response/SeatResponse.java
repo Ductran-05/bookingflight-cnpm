@@ -18,4 +18,5 @@ public class SeatResponse {
     String seatName;
     Integer price;
     Boolean canDelete;
+    String description;
 }

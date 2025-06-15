@@ -25,6 +25,7 @@ public abstract class SeatMapper {
                 .seatName(seat.getSeatName())
                 .price(seat.getPrice())
                 .canDelete(!hasForeignKey)
+                .description(seat.getDescription())
                 .build();
     }
 }
